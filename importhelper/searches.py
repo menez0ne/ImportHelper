@@ -42,6 +42,30 @@ def _year(value):
     return y
 
 
+def _km(value):
+    if value in (None, ""):
+        return None
+    try:
+        km = int(float(str(value).replace(".", "").replace(" ", "")))
+    except ValueError:
+        raise ValueError(f"chilometri non validi: {value}") from None
+    if not 0 <= km <= 2_000_000:
+        raise ValueError(f"chilometri non validi: {value}")
+    return km
+
+
+def km_label(km_min, km_max) -> str:
+    """(None, 50000) -> "fino a 50.000 km", (10000, None) -> "da 10.000 km"."""
+    f = lambda n: f"{n:,}".replace(",", ".")
+    if km_min and km_max:
+        return f"{f(km_min)}–{f(km_max)} km"
+    if km_min:
+        return f"da {f(km_min)} km"
+    if km_max is not None:
+        return f"fino a {f(km_max)} km"
+    return ""
+
+
 def make_search(form: dict) -> dict:
     """Crea una ricerca dai campi del modulo del sito. Solleva ValueError se mancano dati."""
     make_label = (form.get("make") or "").strip()
@@ -51,12 +75,17 @@ def make_search(form: dict) -> dict:
     y1, y2 = _year(form.get("year_min")), _year(form.get("year_max"))
     if y1 and y2 and y1 > y2:
         y1, y2 = y2, y1
+    k1, k2 = _km(form.get("km_min")), _km(form.get("km_max"))
+    if k1 is not None and k2 is not None and k1 > k2:
+        k1, k2 = k2, k1
+    if k1 == 0:
+        k1 = None
     must = _words(form.get("must_contain"))
     exclude = _words(form["exclude_words"]) if "exclude_words" in form else list(DEFAULT_EXCLUDE)
     price_min = form.get("price_min_eur")
     years = f"{y1}–{y2}" if y1 and y2 else (f"dal {y1}" if y1 else (f"fino al {y2}" if y2 else ""))
     nice = lambda w: w if not w.islower() else (w.upper() if any(c.isdigit() for c in w) else w.capitalize())
-    name = " ".join(x for x in (make_label, model_label, " ".join(nice(w) for w in must), years) if x)
+    name = " ".join(x for x in (make_label, model_label, " ".join(nice(w) for w in must), years, km_label(k1, k2)) if x)
     return {
         "name": re.sub(r"\s+", " ", name).strip(),
         "make": slug(make_label),
@@ -65,6 +94,8 @@ def make_search(form: dict) -> dict:
         "model_label": model_label,
         "year_min": y1,
         "year_max": y2,
+        "km_min": k1,
+        "km_max": k2,
         "must_contain": must,
         "exclude_words": exclude,
         "price_min_eur": int(price_min) if price_min not in (None, "") else None,

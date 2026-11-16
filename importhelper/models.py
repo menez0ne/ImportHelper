@@ -72,7 +72,7 @@ def excluded_word(listing: Listing, search: dict) -> str:
 
 
 def matches(listing: Listing, search: dict) -> bool:
-    """Controlla anno e parole obbligatorie (es. "plaid")."""
+    """Controlla anno, chilometri e parole obbligatorie (es. "plaid")."""
     text = " ".join([listing.title, listing.model, listing.version, listing.url]).lower()
     for word in search.get("must_contain", []):
         if word.lower() not in text:
@@ -81,5 +81,10 @@ def matches(listing: Listing, search: dict) -> bool:
         if search.get("year_min") and listing.year < search["year_min"]:
             return False
         if search.get("year_max") and listing.year > search["year_max"]:
+            return False
+    if listing.km is not None:   # annunci senza km: li teniamo, come quelli senza anno
+        if search.get("km_min") and listing.km < search["km_min"]:
+            return False
+        if search.get("km_max") is not None and listing.km > search["km_max"]:
             return False
     return True

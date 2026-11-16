@@ -192,6 +192,7 @@ def search_summary(db: Database, cfg: dict, collector: Collector) -> list[dict]:
         out.append({
             "name": s["name"], "make": s["make"], "model": s["model"],
             "year_min": s.get("year_min"), "year_max": s.get("year_max"),
+            "km_min": s.get("km_min"), "km_max": s.get("km_max"),
             "must_contain": s.get("must_contain", []), "price_min_eur": s.get("price_min_eur"),
             "saved": is_saved(s), "from_config": s.get("saved") is None and s.get("created") is None,
             "created": s.get("created"), "last_run": s.get("last_run"),

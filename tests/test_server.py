@@ -38,6 +38,19 @@ class SearchTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             make_search({"make": "Audi", "model": "RS5", "year_min": "20"})
 
+    def test_make_search_km(self):
+        s = make_search({"make": "Audi", "model": "RS5", "km_min": "80000", "km_max": "10000"})
+        self.assertEqual((s["km_min"], s["km_max"]), (10000, 80000))
+        self.assertEqual(s["name"], "Audi RS5 10.000–80.000 km")
+        self.assertEqual(make_search({"make": "Audi", "model": "RS5", "km_max": "50000"})["name"],
+                         "Audi RS5 fino a 50.000 km")
+        self.assertEqual(make_search({"make": "Audi", "model": "RS5", "year_min": 2024, "km_min": 5000})["name"],
+                         "Audi RS5 dal 2024 da 5.000 km")
+        s = make_search({"make": "Audi", "model": "RS5", "km_min": "0", "km_max": ""})
+        self.assertEqual((s["km_min"], s["km_max"], s["name"]), (None, None, "Audi RS5"))
+        with self.assertRaises(ValueError):
+            make_search({"make": "Audi", "model": "RS5", "km_max": "tanti"})
+
     def test_store(self):
         with tempfile.TemporaryDirectory() as d:
             store = SearchStore(Path(d) / "s.json")

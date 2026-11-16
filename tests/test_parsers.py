@@ -45,6 +45,15 @@ class ParserTests(unittest.TestCase):
         self.assertEqual((l.version, l.power_kw, l.first_registration), ("Plaid AWD", 750, "03/2024"))
         self.assertTrue(matches(l, {"must_contain": ["plaid"], "year_min": 2024, "year_max": 2026}))
         self.assertFalse(matches(l, {"must_contain": ["plaid"], "year_min": 2025}))
+        # chilometri (l.km = 12000); gli annunci senza km restano
+        self.assertTrue(matches(l, {"km_min": 10000, "km_max": 12000}))
+        self.assertFalse(matches(l, {"km_max": 11999}))
+        self.assertFalse(matches(l, {"km_min": 12001}))
+        self.assertFalse(matches(l, {"km_max": 0}))
+        url = autoscout24.search_urls({"make": "tesla", "model": "model-s", "km_min": 1000, "km_max": 50000},
+                                      {"domain": "https://www.autoscout24.it", "countries": ["D"]}, 1)[0]
+        self.assertIn("kmfrom=1000", url)
+        self.assertIn("kmto=50000", url)
 
     def test_autoscout24_no_data(self):
         self.assertEqual(autoscout24.parse_page("<html></html>", "x", "https://x"), ([], 0))
