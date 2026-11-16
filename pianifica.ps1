@@ -24,13 +24,31 @@ Write-Host "Attività ImportHelper creata: ogni 3 ore e 5 minuti dopo l'accesso.
 
 # Icona "ImportHelper" sul Desktop e nel menu Start: accende il server del sito se serve
 # (http://localhost:8765, senza finestre) e apre il sito nel browser.
+function Get-BrowserIcon {
+    # Icona del browser predefinito (Edge, Chrome, Firefox, Brave...), letta dal registro.
+    # Se non si trova (o è un'app dello Store) restituisce $null e si usa l'icona standard.
+    try {
+        $progId = (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice' -ErrorAction Stop).ProgId
+        if (-not $progId) { return $null }
+        $raw = (Get-ItemProperty "Registry::HKEY_CLASSES_ROOT\$progId\DefaultIcon" -ErrorAction Stop).'(default)'
+        if (-not $raw) { return $null }
+        $raw = [Environment]::ExpandEnvironmentVariables(($raw -replace '"', '').Trim())
+        $path = $raw; $index = 0
+        if ($raw -match '^(.*),\s*(-?\d+)$') { $path = $Matches[1].Trim(); $index = $Matches[2] }
+        if (Test-Path -LiteralPath $path) { return "$path,$index" }
+    } catch {}
+    return $null
+}
+$icon = Get-BrowserIcon
+if (-not $icon) { $icon = "$env:SystemRoot\System32\shell32.dll,13" }
+
 $ws = New-Object -ComObject WScript.Shell
 foreach ($dir in @([Environment]::GetFolderPath('Desktop'), [Environment]::GetFolderPath('Programs'))) {
     $lnk = $ws.CreateShortcut((Join-Path $dir 'ImportHelper.lnk'))
     $lnk.TargetPath = $pythonw
     $lnk.Arguments = '-m importhelper.open'
     $lnk.WorkingDirectory = $root
-    $lnk.IconLocation = "$env:SystemRoot\System32\shell32.dll,13"
+    $lnk.IconLocation = $icon
     $lnk.Description = 'Apri ImportHelper'
     $lnk.Save()
 }
