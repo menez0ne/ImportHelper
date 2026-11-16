@@ -123,6 +123,11 @@ def search_urls(search: dict, cfg: dict, page: int) -> list[str]:
         "desc": "1",
         "page": str(page),
     }
+    # filtro chilometri direttamente sul sito: meno pagine da leggere
+    if search.get("km_min"):
+        common["kmfrom"] = str(search["km_min"])
+    if search.get("km_max") is not None:
+        common["kmto"] = str(search["km_max"])
     used = {**common, "ustate": "U,D", "fregfrom": str(search.get("year_min") or "")}
     new = {**common, "ustate": "N"}
     return [f"{base}?{urlencode(used)}", f"{base}?{urlencode(new)}"]

@@ -415,12 +415,16 @@ button, input, select { font: inherit; color: inherit; }
       <label>Modello <input id="s-model" list="dl-models" autocomplete="off" placeholder="911" required></label>
       <label>Anno da <input id="s-y1" type="number" inputmode="numeric" min="1950" max="2100" placeholder="2022"></label>
       <label>Anno fino a <input id="s-y2" type="number" inputmode="numeric" min="1950" max="2100" placeholder="2026"></label>
+      <label>Km da <small>lascia vuoto per nessun limite</small>
+        <input id="s-k1" type="number" inputmode="numeric" min="0" step="1000" placeholder="0"></label>
+      <label>Km fino a <small>chilometraggio massimo</small>
+        <input id="s-k2" type="number" inputmode="numeric" min="0" step="1000" placeholder="50000"></label>
+      <label class="wide">Prezzo minimo in euro <small>scarta le rate mensili</small>
+        <input id="s-pmin" type="number" inputmode="numeric" min="0" step="1000" value="3000"></label>
       <label class="wide">Parole che devono esserci <small>separate da virgola, es. gt3 oppure plaid</small>
         <input id="s-must" autocomplete="off" placeholder="gt3"></label>
-      <label>Parole da escludere <small>annunci di noleggio e leasing</small>
+      <label class="wide">Parole da escludere <small>annunci di noleggio e leasing</small>
         <input id="s-excl" autocomplete="off" value="noleggio, LOA, LLD, lungo termine, rental, Miete"></label>
-      <label>Prezzo minimo in euro <small>scarta le rate mensili</small>
-        <input id="s-pmin" type="number" inputmode="numeric" min="0" step="1000" value="3000"></label>
     </div>
     <datalist id="dl-makes"></datalist><datalist id="dl-models"></datalist>
     <div class="sactions">
@@ -989,7 +993,11 @@ button, input, select { font: inherit; color: inherit; }
     });
     var y1 = $("s-y1").value, y2 = $("s-y2").value;
     var yrs = y1 && y2 ? (Math.min(y1, y2) + "–" + Math.max(y1, y2)) : (y1 ? "dal " + y1 : (y2 ? "fino al " + y2 : ""));
-    var name = [mk, md, must.join(" "), yrs].filter(Boolean).join(" ");
+    var k1 = parseInt($("s-k1").value, 10), k2 = parseInt($("s-k2").value, 10);
+    if (k1 > 0 && k2 >= 0 && k1 > k2) { var t = k1; k1 = k2; k2 = t; }
+    var kms = k1 > 0 && k2 >= 0 ? nf.format(k1) + "–" + nf.format(k2) + " km"
+      : (k1 > 0 ? "da " + nf.format(k1) + " km" : (k2 >= 0 ? "fino a " + nf.format(k2) + " km" : ""));
+    var name = [mk, md, must.join(" "), yrs, kms].filter(Boolean).join(" ");
     $("sname").textContent = name || "Marca e modello";
     $("sname").className = name ? "" : "blank";
   }
@@ -1012,7 +1020,7 @@ button, input, select { font: inherit; color: inherit; }
     renderSearches();
     checkStatus();
   }
-  ["s-make", "s-model", "s-y1", "s-y2", "s-must"].forEach(function (id) { $(id).addEventListener("input", previewName); });
+  ["s-make", "s-model", "s-y1", "s-y2", "s-k1", "s-k2", "s-must"].forEach(function (id) { $(id).addEventListener("input", previewName); });
   $("s-make").addEventListener("change", loadModels);
   $("s-model").addEventListener("focus", loadModels);
   $("sform").addEventListener("submit", function (e) {
@@ -1021,6 +1029,7 @@ button, input, select { font: inherit; color: inherit; }
     var body = {
       make: $("s-make").value.trim(), model: $("s-model").value.trim(),
       year_min: $("s-y1").value, year_max: $("s-y2").value,
+      km_min: $("s-k1").value, km_max: $("s-k2").value,
       must_contain: words($("s-must").value), exclude_words: words($("s-excl").value),
       price_min_eur: $("s-pmin").value, save: $("s-save").checked
     };
