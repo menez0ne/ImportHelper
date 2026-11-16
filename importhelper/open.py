@@ -81,6 +81,7 @@ def alert(text: str) -> None:
 
 
 def main() -> None:
+    log(f"avvio icona: {sys.executable} (Python {sys.version.split()[0]})")
     try:
         if not server_up():
             start_server()
@@ -89,6 +90,7 @@ def main() -> None:
                 if server_up():
                     break
         if server_up():
+            log("server acceso, apro il browser")
             if not open_in_browser(URL):
                 alert(f"Il sito è acceso ma non riesco ad aprire il browser.\nAprilo tu e vai su {URL}")
             return
