@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ImportHelper: auto in vendita in Europa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #E6ECE8;      /* carta del libretto di circolazione */
+  --sheet: #F6F8F6;
+  --ink: #18222E;
+  --muted: #586572;
+  --line: #C3CDC7;
+  --eu: #1F3F9B;         /* banda blu della targa */
+  --star: #F3C51B;
+  --drop: #23704A;
+  --focus: #1F3F9B;
+  --cond: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --sans: "Barlow", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 400 16px/1.5 var(--sans);
+}
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+img { display: block; max-width: 100%; }
+button, input, select { font: inherit; color: inherit; }
+.num { font-family: var(--cond); font-variant-numeric: tabular-nums; }
+
+/* ---------- testata ---------- */
+.top {
+  display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 24px;
+  padding: 28px clamp(16px, 4vw, 48px) 20px; border-bottom: 2px solid var(--ink);
+}
+.brand { display: flex; align-items: center; gap: 14px; text-decoration: none; }
+.brand h1 { margin: 0; font: 700 clamp(2rem, 4vw, 2.75rem)/1 var(--cond); letter-spacing: -0.01em; }
+.brand p { margin: 2px 0 0; color: var(--muted); font-size: 0.95rem; }
+.stamp { text-align: right; color: var(--muted); font-size: 0.9rem; }
+.stamp strong { display: block; color: var(--ink); font: 600 1.6rem/1.1 var(--cond); }
+
+/* ---------- targa (banda UE + sigla) ---------- */
+.plate {
+  display: inline-flex; align-items: stretch; height: 24px; flex: none;
+  border: 1.5px solid var(--ink); border-radius: 3px; background: #fff; overflow: hidden;
+  font: 700 0.95rem/1 var(--cond);
+}
+.plate .band {
+  width: 17px; background: var(--eu); color: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 2px 0 1px;
+}
+.plate .band svg { width: 11px; height: 11px; }
+.plate .band span { font-size: 0.62rem; letter-spacing: 0.02em; }
+.plate .code { display: flex; align-items: center; padding: 0 6px; min-width: 26px; justify-content: center; }
+.plate.big { height: 34px; font-size: 1.25rem; }
+.plate.big .band { width: 23px; }
+.plate.big .band svg { width: 15px; height: 15px; }
+
+/* ---------- impaginazione elenco ---------- */
+.layout {
+  display: grid; grid-template-columns: 260px 1fr; gap: 32px;
+  padding: 24px clamp(16px, 4vw, 48px) 64px; max-width: 1560px; margin: 0 auto;
+}
+.filters { position: sticky; top: 16px; align-self: start; }
+.filters h2 { font: 600 1.35rem/1.2 var(--cond); margin: 0 0 12px; }
+.field { margin-bottom: 16px; }
+.field > label, .field > .lbl { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; }
+.field input, .field select {
+  width: 100%; padding: 8px 10px; border: 1.5px solid var(--line); border-radius: 4px; background: var(--sheet);
+}
+.field input:focus, .field select:focus { border-color: var(--ink); outline: none; box-shadow: 0 0 0 2px var(--focus); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); border: 1.5px solid var(--ink); border-radius: 4px; overflow: hidden; }
+.seg button { border: 0; background: var(--sheet); padding: 7px 4px; cursor: pointer; font-size: 0.9rem; }
+.seg button + button { border-left: 1.5px solid var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+.reset { background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; color: var(--muted); }
+.filters-toggle { display: none; }
+
+.bar { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; margin-bottom: 16px; }
+.count { font: 600 1.35rem/1.2 var(--cond); margin: 0; }
+.sort { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+.sort select { padding: 6px 8px; border: 1.5px solid var(--line); border-radius: 4px; background: var(--sheet); }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(272px, 1fr)); gap: 20px; }
+.card {
+  display: flex; flex-direction: column; text-decoration: none; background: var(--sheet);
+  border: 1.5px solid var(--line); border-radius: 6px; overflow: hidden;
+}
+.card:hover { border-color: var(--ink); }
+.card:focus-visible { outline-offset: 3px; }
+.ph { position: relative; aspect-ratio: 4 / 3; background: #CFD8D3; }
+.ph img { width: 100%; height: 100%; object-fit: cover; }
+.ph .none { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 0.9rem; }
+.badges { position: absolute; left: 8px; top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+.badge {
+  font: 600 0.8rem/1 var(--sans); padding: 5px 7px; border-radius: 3px;
+  background: var(--sheet); color: var(--ink); border: 1px solid var(--ink);
+}
+.badge.fresh { background: var(--star); }
+.badge.drop { background: var(--drop); color: #fff; border-color: var(--drop); }
+.cbody { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.where { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.9rem; min-width: 0; }
+.where span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card h3 { margin: 2px 0 0; font: 600 1.15rem/1.2 var(--sans); }
+.ver {
+  margin: 0; color: var(--muted); font-size: 0.9rem; line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.pricebox { margin-top: auto; padding-top: 8px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.price { font: 700 2.1rem/1 var(--cond); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.orig { color: var(--muted); font-size: 0.85rem; }
+.facts { display: flex; gap: 0; margin: 4px 0 0; border-top: 1px solid var(--line); padding-top: 8px; }
+.facts div { flex: 1; }
+.facts div + div { border-left: 1px solid var(--line); padding-left: 10px; }
+.facts dt { font-size: 0.78rem; color: var(--muted); }
+.facts dd { margin: 0; font: 600 1.15rem/1.2 var(--cond); font-variant-numeric: tabular-nums; }
+.srcline { margin: 8px 0 0; font-size: 0.85rem; color: var(--muted); }
+.srcline strong { color: var(--ink); font-weight: 600; }
+.also { margin: 0 0 8px; font-size: 0.95rem; }
+.also a { font-weight: 600; }
+.empty { padding: 48px 0; max-width: 46ch; }
+.empty h3 { font: 600 1.5rem/1.2 var(--cond); margin: 0 0 6px; }
+
+/* ---------- scheda annuncio ---------- */
+.detail { max-width: 1320px; margin: 0 auto; padding: 20px clamp(16px, 4vw, 48px) 64px; }
+.back { display: inline-block; margin-bottom: 16px; font-weight: 600; }
+.dgrid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr); gap: 32px; align-items: start; }
+.gallery .main { position: relative; aspect-ratio: 4 / 3; background: #CFD8D3; border-radius: 6px; overflow: hidden; }
+.gallery .main img { width: 100%; height: 100%; object-fit: contain; background: #10161D; }
+.gnav {
+  position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%;
+  border: 0; background: rgba(246, 248, 246, 0.92); cursor: pointer; font-size: 1.3rem; line-height: 1;
+}
+.gnav.prev { left: 10px; } .gnav.next { right: 10px; }
+.gcount { position: absolute; right: 10px; bottom: 10px; background: rgba(24, 34, 46, 0.85); color: #fff; padding: 3px 8px; border-radius: 3px; font: 600 0.95rem/1.2 var(--cond); }
+.thumbs { display: flex; gap: 6px; overflow-x: auto; padding: 8px 0 4px; }
+.thumbs button { flex: none; width: 84px; aspect-ratio: 4 / 3; padding: 0; border: 2px solid transparent; border-radius: 4px; overflow: hidden; cursor: pointer; background: #CFD8D3; }
+.thumbs button[aria-current="true"] { border-color: var(--ink); }
+.thumbs img { width: 100%; height: 100%; object-fit: cover; }
+.info h1 { margin: 12px 0 4px; font: 700 clamp(1.8rem, 3vw, 2.4rem)/1.05 var(--cond); }
+.info .ver { -webkit-line-clamp: unset; font-size: 1rem; }
+.info .price { font-size: clamp(2.8rem, 5vw, 3.6rem); margin-top: 16px; display: block; }
+.info .orig { font-size: 0.95rem; margin-top: 2px; }
+.cta {
+  display: block; text-align: center; margin: 18px 0 8px; padding: 13px 16px; border-radius: 4px;
+  background: var(--eu); color: #fff; text-decoration: none; font-weight: 600;
+}
+.cta:hover { background: #17307A; }
+.src { color: var(--muted); font-size: 0.85rem; margin: 0; }
+.specs { display: grid; grid-template-columns: 1fr 1fr; margin: 24px 0 0; border: 1.5px solid var(--ink); border-radius: 6px; overflow: hidden; background: var(--sheet); }
+.specs div { padding: 9px 12px; border-bottom: 1px solid var(--line); }
+.specs div:nth-child(odd) { border-right: 1px solid var(--line); }
+.specs dt { font-size: 0.8rem; color: var(--muted); }
+.specs dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.specs dd.num { font: 600 1.2rem/1.25 var(--cond); }
+.hist { margin-top: 28px; }
+.hist h2 { font: 600 1.35rem/1.2 var(--cond); margin: 0 0 8px; }
+.hist table { width: 100%; border-collapse: collapse; }
+.hist td { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.hist td:last-child { text-align: right; font: 600 1.15rem/1.2 var(--cond); font-variant-numeric: tabular-nums; }
+.hist p { color: var(--muted); margin: 0; }
+.hist svg { width: 100%; height: 72px; display: block; margin-bottom: 8px; }
+
+/* ---------- navigazione ---------- */
+.top { align-items: end; }
+.nav { display: flex; gap: 4px; align-self: end; margin-bottom: -22px; }
+.nav a {
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px 14px; text-decoration: none;
+  font: 600 1.15rem/1 var(--cond); color: var(--muted); border-bottom: 5px solid transparent;
+}
+.nav a:hover { color: var(--ink); }
+.nav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--ink); }
+.pill {
+  min-width: 24px; padding: 3px 7px; border-radius: 12px; text-align: center;
+  background: var(--star); color: var(--ink); border: 1.5px solid var(--ink);
+  font: 700 0.9rem/1 var(--cond); font-variant-numeric: tabular-nums;
+}
+
+/* ---------- notifiche ---------- */
+.notif { max-width: 980px; margin: 0 auto; padding: 24px clamp(16px, 4vw, 48px) 64px; }
+.nhead { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; margin-bottom: 8px; }
+.nhead h2 { margin: 0; font: 700 clamp(1.8rem, 3vw, 2.3rem)/1 var(--cond); }
+.nhead p { margin: 4px 0 0; color: var(--muted); }
+.markread {
+  padding: 9px 14px; border: 1.5px solid var(--ink); border-radius: 4px; background: var(--sheet);
+  font-weight: 600; cursor: pointer;
+}
+.markread:hover { background: var(--ink); color: var(--sheet); }
+.markread:disabled { opacity: 0.45; cursor: default; background: var(--sheet); color: var(--ink); }
+.ntools { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0 8px; }
+.ntools label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 0.9rem; }
+.ntools select { padding: 8px 10px; border: 1.5px solid var(--line); border-radius: 4px; background: var(--sheet); min-width: 200px; }
+.day { margin: 28px 0 8px; font: 600 1.3rem/1.2 var(--cond); }
+.day small { font: 400 0.9rem var(--sans); color: var(--muted); margin-left: 8px; }
+.evlist { list-style: none; margin: 0; padding: 0; border-top: 1.5px solid var(--ink); }
+.ev {
+  display: grid; grid-template-columns: 112px 1fr auto; gap: 16px; align-items: center;
+  padding: 12px 12px 12px 14px; text-decoration: none; border-bottom: 1px solid var(--line);
+  border-left: 5px solid transparent;
+}
+.ev:hover { background: var(--sheet); }
+.ev.unread { border-left-color: var(--eu); background: var(--sheet); }
+.ev .thumb { width: 112px; aspect-ratio: 4 / 3; border-radius: 4px; overflow: hidden; background: #CFD8D3; }
+.ev .thumb img { width: 100%; height: 100%; object-fit: cover; }
+.ev.gone .thumb img { filter: grayscale(1); opacity: 0.7; }
+.ev .evbody { display: block; min-width: 0; }
+.ev h3 { margin: 6px 0 2px; font: 600 1.05rem/1.25 var(--sans); overflow-wrap: anywhere; }
+.ev h3 span { font-weight: 400; color: var(--muted); }
+.ev .where { font-size: 0.85rem; }
+.evprice { text-align: right; white-space: nowrap; }
+.evprice strong { display: block; font: 700 1.6rem/1.05 var(--cond); font-variant-numeric: tabular-nums; }
+.evprice s { color: var(--muted); font: 500 1rem var(--cond); }
+.evprice time { display: block; color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
+.ev.gone .evprice strong { color: var(--muted); text-decoration: line-through; }
+.badge.up { background: var(--sheet); }
+.badge.gone { background: #D5DCD8; color: var(--muted); border-color: var(--muted); }
+.unread-tag { font-size: 0.8rem; font-weight: 600; color: var(--eu); margin-left: 8px; }
+.gonebar {
+  margin: 0 0 16px; padding: 10px 14px; border: 1.5px solid var(--muted); border-radius: 4px;
+  background: #D5DCD8; font-weight: 600;
+}
+
+/* ---------- cerca un'auto ---------- */
+.cerca { max-width: 1180px; margin: 0 auto; padding: 24px clamp(16px, 4vw, 48px) 64px; }
+.cerca h2 { margin: 0 0 4px; font: 700 clamp(1.8rem, 3vw, 2.3rem)/1 var(--cond); }
+.cerca .lead { margin: 0 0 20px; color: var(--muted); max-width: 62ch; }
+.sform { background: var(--sheet); border: 1.5px solid var(--ink); border-radius: 6px; padding: 20px; }
+.sname { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; margin: 0 0 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.sname .plate { height: 34px; font-size: 1.25rem; }
+.sname .plate .band { width: 23px; }
+.sname #sname { display: block; font: 700 clamp(1.5rem, 3vw, 2.2rem)/1.05 var(--cond); overflow-wrap: anywhere; }
+.sname #sname.blank { color: var(--line); }
+.sgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 16px; }
+.sgrid .wide { grid-column: span 2; }
+.sgrid label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 0.9rem; }
+.sgrid label small { font-weight: 400; color: var(--muted); }
+.sgrid input { padding: 9px 10px; border: 1.5px solid var(--line); border-radius: 4px; background: #fff; width: 100%; }
+.sgrid input:focus { border-color: var(--ink); outline: none; box-shadow: 0 0 0 2px var(--focus); }
+.sactions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 18px; }
+.savebox { display: flex; align-items: flex-start; gap: 10px; max-width: 52ch; font-size: 0.95rem; cursor: pointer; }
+.savebox input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--eu); flex: none; }
+.savebox span small { display: block; color: var(--muted); }
+.go {
+  margin-left: auto; padding: 13px 22px; border: 0; border-radius: 4px; background: var(--eu); color: #fff;
+  font: 600 1rem var(--sans); cursor: pointer;
+}
+.go:hover { background: #17307A; }
+.go:disabled { opacity: 0.5; cursor: default; }
+.serr { margin: 12px 0 0; color: #A3261B; font-weight: 600; }
+.sprog { margin-top: 24px; border: 1.5px solid var(--ink); border-radius: 6px; background: var(--sheet); overflow: hidden; }
+.sprog header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 16px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.sprog h3 { margin: 0; font: 600 1.35rem/1.2 var(--cond); }
+.sprog .tot { font: 700 1.6rem/1 var(--cond); font-variant-numeric: tabular-nums; }
+.srows { list-style: none; margin: 0; padding: 0; }
+.srows li { display: grid; grid-template-columns: 150px 1fr auto; gap: 12px; align-items: center; padding: 9px 16px; border-bottom: 1px solid var(--line); }
+.srows li:last-child { border-bottom: 0; }
+.srows .sn { font-weight: 600; }
+.srows .sd { color: var(--muted); font-size: 0.9rem; }
+.srows .sk { font: 600 1.15rem/1 var(--cond); font-variant-numeric: tabular-nums; text-align: right; min-width: 6ch; }
+.srows li.running { background: #fff; box-shadow: inset 4px 0 0 var(--eu); }
+.srows li.running .sd { color: var(--eu); font-weight: 600; }
+.srows li.done .sk { color: var(--ink); }
+.srows li.waiting { color: var(--muted); }
+.sdone { padding: 14px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; border-top: 1.5px solid var(--ink); background: #fff; }
+.sdone p { margin: 0; flex: 1 1 260px; }
+.btn {
+  display: inline-block; padding: 9px 14px; border: 1.5px solid var(--ink); border-radius: 4px; background: var(--sheet);
+  font: 600 0.95rem var(--sans); color: var(--ink); text-decoration: none; cursor: pointer;
+}
+.btn:hover { background: var(--ink); color: var(--sheet); }
+.btn.primary { background: var(--eu); border-color: var(--eu); color: #fff; }
+.btn.primary:hover { background: #17307A; }
+.btn.quiet { border-color: transparent; background: none; text-decoration: underline; padding-left: 4px; padding-right: 4px; }
+.btn.quiet:hover { color: #A3261B; background: none; }
+.lists { display: grid; grid-template-columns: 1.4fr 1fr; gap: 32px; margin-top: 36px; }
+.lists h3 { margin: 0 0 4px; font: 600 1.45rem/1.2 var(--cond); }
+.lists .hint { margin: 0 0 10px; color: var(--muted); font-size: 0.9rem; }
+.slist { list-style: none; margin: 0; padding: 0; border-top: 1.5px solid var(--ink); }
+.slist li { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.slist .t { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.slist .t strong { font: 600 1.2rem/1.2 var(--cond); }
+.slist .meta { color: var(--muted); font-size: 0.88rem; margin: 2px 0 8px; }
+.slist .acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.slist .acts .btn { padding: 6px 10px; font-size: 0.88rem; }
+.chip { font: 600 0.78rem/1 var(--sans); padding: 4px 6px; border-radius: 3px; background: var(--star); border: 1px solid var(--ink); }
+.chip.q { background: var(--sheet); }
+.tempbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 0 0 16px; padding: 12px 14px;
+  border: 1.5px solid var(--eu); border-radius: 6px; background: var(--sheet);
+}
+.tempbar p { margin: 0; flex: 1 1 300px; }
+@media (prefers-reduced-motion: no-preference) {
+  .srows li.running .sd::after { content: ""; display: inline-block; width: 1.2em; text-align: left; animation: dots 1.2s steps(4) infinite; }
+  @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
+}
+
+@media (max-width: 860px) {
+  .sgrid { grid-template-columns: 1fr 1fr; }
+  .lists { grid-template-columns: 1fr; }
+  .srows li { grid-template-columns: 1fr auto; }
+  .srows .sd { grid-column: 1 / -1; grid-row: 2; }
+  .go { margin-left: 0; width: 100%; }
+  .nav { order: 3; width: 100%; margin-bottom: -22px; }
+  .ev { grid-template-columns: 84px 1fr; gap: 12px; }
+  .ev .thumb { width: 84px; }
+  .evprice { grid-column: 2; text-align: left; }
+  .evprice strong { display: inline; font-size: 1.35rem; margin-right: 6px; }
+  .evprice time { display: inline; margin-left: 6px; }
+  .ntools select { min-width: 0; width: 100%; }
+  .ntools label { flex: 1 1 140px; }
+
+  .layout { grid-template-columns: 1fr; gap: 0; padding-top: 16px; }
+  .filters { position: static; }
+  .filters-toggle {
+    display: flex; justify-content: space-between; width: 100%; padding: 11px 14px; margin-bottom: 12px;
+    border: 1.5px solid var(--ink); border-radius: 4px; background: var(--sheet); font-weight: 600; cursor: pointer;
+  }
+  .filters .panel { display: none; padding-bottom: 8px; }
+  .filters.open .panel { display: block; }
+  .filters h2 { display: none; }
+  .dgrid { grid-template-columns: 1fr; gap: 16px; }
+  .stamp { text-align: left; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="#/">
+    <div>
+      <h1>ImportHelper</h1>
+      <p>Le auto che cerchi, in vendita in tutta Europa</p>
+    </div>
+  </a>
+  <nav class="nav" aria-label="Sezioni">
+    <a href="#/" id="nav-list">Annunci</a>
+    <a href="#/cerca" id="nav-cerca" hidden>Cerca un'auto</a>
+    <a href="#/notifiche" id="nav-notif">Notifiche <span class="pill" id="unread" hidden></span></a>
+  </nav>
+  <div class="stamp"><strong id="total" class="num"></strong><span id="updated"></span></div>
+</header>
+
+<main id="list-view">
+  <div class="layout">
+    <aside class="filters" id="filters">
+      <button class="filters-toggle" type="button" aria-expanded="false" aria-controls="panel" id="ftoggle">
+        <span>Filtri</span><span id="factive"></span>
+      </button>
+      <div class="panel" id="panel">
+        <h2>Filtri</h2>
+        <div class="field"><label for="f-q">Cerca</label><input id="f-q" type="search" placeholder="Plaid, Avant, Performance..."></div>
+        <div class="field"><label for="f-search">Modello</label><select id="f-search"><option value="">Tutti i modelli</option></select></div>
+        <div class="field"><label for="f-country">Paese</label><select id="f-country"><option value="">Tutti i Paesi</option></select></div>
+        <div class="field"><label for="f-source">Sito</label><select id="f-source"><option value="">Tutti i siti</option></select></div>
+        <div class="field"><span class="lbl" id="cond-lbl">Condizione</span>
+          <div class="seg" role="group" aria-labelledby="cond-lbl" id="f-cond">
+            <button type="button" data-v="" aria-pressed="true">Tutte</button>
+            <button type="button" data-v="used" aria-pressed="false">Usate</button>
+            <button type="button" data-v="new" aria-pressed="false">Nuove</button>
+          </div>
+        </div>
+        <div class="field"><span class="lbl">Prezzo in euro</span>
+          <div class="pair">
+            <input id="f-pmin" type="number" inputmode="numeric" min="0" step="1000" placeholder="Da" aria-label="Prezzo minimo in euro">
+            <input id="f-pmax" type="number" inputmode="numeric" min="0" step="1000" placeholder="A" aria-label="Prezzo massimo in euro">
+          </div>
+        </div>
+        <div class="field"><label for="f-km">Chilometri massimi</label><input id="f-km" type="number" inputmode="numeric" min="0" step="1000" placeholder="Qualsiasi"></div>
+        <div class="field"><label for="f-year">Anno</label><select id="f-year"><option value="">Tutti gli anni</option></select></div>
+        <button class="reset" type="button" id="reset">Azzera i filtri</button>
+      </div>
+    </aside>
+    <section aria-labelledby="count">
+      <div class="bar">
+        <h2 class="count" id="count" aria-live="polite"></h2>
+        <label class="sort">Ordina per
+          <select id="sort">
+            <option value="price-asc">Prezzo più basso</option>
+            <option value="price-desc">Prezzo più alto</option>
+            <option value="km-asc">Meno chilometri</option>
+            <option value="new">Ultimi arrivati</option>
+            <option value="year-desc">Anno più recente</option>
+          </select>
+        </label>
+      </div>
+      <div class="tempbar" id="tempbar" hidden></div>
+      <div class="grid" id="grid"></div>
+      <div class="empty" id="empty" hidden>
+        <h3>Nessun annuncio con questi filtri</h3>
+        <p>Allarga la fascia di prezzo o di chilometri, oppure <button class="reset" type="button" id="reset2">azzera i filtri</button>.</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<main id="detail-view" class="detail" hidden></main>
+
+<main id="cerca-view" class="cerca" hidden>
+  <h2>Cerca un'auto</h2>
+  <p class="lead">Scrivi marca e modello: cerco su tutti i siti attivi e ti mostro gli annunci appena ho finito,
+    di solito in uno o due minuti.</p>
+  <form class="sform" id="sform" novalidate>
+    <div class="sname" aria-hidden="true"><span class="plate"><span class="band" id="sstars"></span><span class="code">EU</span></span>
+      <span id="sname" class="blank">Marca e modello</span></div>
+    <div class="sgrid">
+      <label>Marca <input id="s-make" list="dl-makes" autocomplete="off" placeholder="Porsche" required></label>
+      <label>Modello <input id="s-model" list="dl-models" autocomplete="off" placeholder="911" required></label>
+      <label>Anno da <input id="s-y1" type="number" inputmode="numeric" min="1950" max="2100" placeholder="2022"></label>
+      <label>Anno fino a <input id="s-y2" type="number" inputmode="numeric" min="1950" max="2100" placeholder="2026"></label>
+      <label class="wide">Parole che devono esserci <small>separate da virgola, es. gt3 oppure plaid</small>
+        <input id="s-must" autocomplete="off" placeholder="gt3"></label>
+      <label>Parole da escludere <small>annunci di noleggio e leasing</small>
+        <input id="s-excl" autocomplete="off" value="noleggio, LOA, LLD, lungo termine, rental, Miete"></label>
+      <label>Prezzo minimo in euro <small>scarta le rate mensili</small>
+        <input id="s-pmin" type="number" inputmode="numeric" min="0" step="1000" value="3000"></label>
+    </div>
+    <datalist id="dl-makes"></datalist><datalist id="dl-models"></datalist>
+    <div class="sactions">
+      <label class="savebox"><input type="checkbox" id="s-save">
+        <span>Salva ricerca<small>La aggiorno ogni 3 ore e ti avviso nelle Notifiche di nuovi annunci e ribassi.
+          Se non la salvi resta tra le ricerche recenti per 7 giorni.</small></span></label>
+      <button class="go" type="submit" id="s-go">Cerca su tutti i siti</button>
+    </div>
+    <p class="serr" id="serr" role="alert" hidden></p>
+  </form>
+  <section class="sprog" id="sprog" hidden aria-live="polite"></section>
+  <div class="lists">
+    <section aria-labelledby="mine-h"><h3 id="mine-h">Le mie ricerche</h3>
+      <p class="hint">Si aggiornano da sole ogni 3 ore.</p><ul class="slist" id="mine"></ul></section>
+    <section aria-labelledby="recent-h"><h3 id="recent-h">Ricerche recenti</h3>
+      <p class="hint">Non salvate: si cancellano da sole 7 giorni dopo l'ultimo uso.</p><ul class="slist" id="recent"></ul></section>
+  </div>
+</main>
+
+<main id="notif-view" class="notif" hidden>
+  <div class="nhead">
+    <div>
+      <h2>Notifiche</h2>
+      <p id="nsummary"></p>
+    </div>
+    <button type="button" class="markread" id="markread">Segna tutte come lette</button>
+  </div>
+  <div class="ntools">
+    <label>Tipo di notifica
+      <select id="n-type">
+        <option value="">Tutte</option>
+        <option value="new">Nuovi annunci</option>
+        <option value="price_drop">Prezzo sceso</option>
+        <option value="price_up">Prezzo salito</option>
+        <option value="removed">Non più online</option>
+      </select>
+    </label>
+    <label>Modello
+      <select id="n-search"><option value="">Tutti i modelli</option></select>
+    </label>
+  </div>
+  <div id="nlist"></div>
+</main>
+
+<script id="data" type="application/json">/*__DATA__*/{}</script>
+<script>
+(function () {
+  "use strict";
+  var DATA = JSON.parse(document.getElementById("data").textContent);
+  var ALL = DATA.listings || [];
+  // elenco: solo annunci online, e una sola scheda per auto anche se è su più siti
+  var LA = ALL.filter(function (l) { return l.active !== false && !l.dup_of; });
+  var TEMP = {};
+  (DATA.temp_searches || []).forEach(function (n) { TEMP[n] = 1; });
+  // le ricerche temporanee si vedono solo aprendo quella ricerca
+  var L = LA.filter(function (l) { return !l.temp; });
+  var EV = DATA.events || [];
+  var BYID = {};
+  ALL.forEach(function (l) { BYID[l.id] = l; });
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) { /* file:// senza storage */ } }
+  };
+  var READ_KEY = "importhelper.notifiche.lette";
+  var NOW = Date.now();
+  var DAY = 864e5;
+
+  var COUNTRIES = {
+    DE: ["D", "Germania"], AT: ["A", "Austria"], BE: ["B", "Belgio"], ES: ["E", "Spagna"],
+    FR: ["F", "Francia"], IT: ["I", "Italia"], LU: ["L", "Lussemburgo"], NL: ["NL", "Paesi Bassi"],
+    CH: ["CH", "Svizzera"], PT: ["P", "Portogallo"], IE: ["IRL", "Irlanda"], GB: ["UK", "Regno Unito"],
+    SE: ["S", "Svezia"], NO: ["N", "Norvegia"], DK: ["DK", "Danimarca"], FI: ["FIN", "Finlandia"],
+    PL: ["PL", "Polonia"], CZ: ["CZ", "Repubblica Ceca"]
+  };
+  var SOURCES = {
+    autoscout24: "AutoScout24", marktplaats: "Marktplaats", "2dehands": "2dehands", otomoto: "Otomoto",
+    willhaben: "Willhaben", blocket: "Blocket", finn: "Finn.no", tesla: "Inventario Tesla"
+  };
+  function sname(s) { return SOURCES[s] || s; }
+  function sitesOf(l) { return [l.source].concat((l.also || []).map(function (x) { return x.source; })); }
+  var FUEL = { "Elettrica/Benzina": "Ibrida plug-in (elettrica/benzina)" };
+
+  // Intl in italiano non separa le migliaia sotto 10.000 ("5812"): formattiamo a mano
+  var nf = { format: function (v) { return String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, "."); } };
+  var df = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short", year: "numeric" });
+  var dtf = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function eur(v) { return v == null ? "Prezzo n.d." : nf.format(v) + " €"; }
+  function cname(c) { return (COUNTRIES[c] || [c, c || "Paese n.d."])[1]; }
+  function stars() {
+    var s = '<svg viewBox="-6 -6 12 12" width="12" height="12" aria-hidden="true">';
+    for (var i = 0; i < 12; i++) {
+      var a = i * Math.PI / 6;
+      s += '<circle cx="' + (4.4 * Math.cos(a)).toFixed(2) + '" cy="' + (4.4 * Math.sin(a)).toFixed(2) + '" r="0.95" fill="#F3C51B"/>';
+    }
+    return s + "</svg>";
+  }
+  var STARS = stars();
+  function plate(c, big) {
+    var code = (COUNTRIES[c] || [c || "?"])[0];
+    return '<span class="plate' + (big ? " big" : "") + '" aria-hidden="true"><span class="band">' + STARS +
+      "</span><span class=\"code\">" + esc(code) + "</span></span>";
+  }
+  function small(url) { return String(url).replace(/\/\d+x\d+\.(webp|jpe?g)$/, "/480x360.$1"); }
+  function regLabel(l) { return l.first_registration || (l.year ? String(l.year) : (l.condition === "new" ? "Nuova" : "n.d.")); }
+
+  // dati derivati. "Nuovo annuncio" = visto per la prima volta nelle ultime 48 ore,
+  // ma non durante la prima raccolta in assoluto (lì sarebbero tutti "nuovi").
+  var FIRST = Math.min.apply(null, ALL.map(function (l) { return Date.parse(l.first_seen) || Infinity; }));
+  ALL.forEach(function (l) {
+    var seen = Date.parse(l.first_seen);
+    l._fresh = seen > FIRST + 6 * 3600e3 && (NOW - seen) < 2 * DAY;
+    var h = (l.history || []).map(function (x) { return x.eur; }).filter(function (x) { return x != null; });
+    l._max = h.length ? Math.max.apply(null, h) : null;
+    l._drop = (l._max != null && l.price_eur != null && l.price_eur < l._max) ? l._max - l.price_eur : 0;
+    l._text = [l.title, l.version, l.model, l.search, l.city, l.seller].join(" ").toLowerCase();
+  });
+
+  // ---------- filtri ----------
+  var $ = function (id) { return document.getElementById(id); };
+  var F = { q: "", search: "", country: "", source: "", cond: "", pmin: "", pmax: "", km: "", year: "" };
+  var sortBy = "price-asc";
+
+  (DATA.searches || []).forEach(function (s) {
+    var n = L.filter(function (l) { return l.search === s; }).length;
+    $("f-search").insertAdjacentHTML("beforeend", '<option value="' + esc(s) + '">' + esc(s) + " (" + n + ")</option>");
+  });
+  // una ricerca non salvata compare nel filtro solo mentre la stai guardando
+  function addTempOption(s) {
+    if (!TEMP[s] || $("f-search").querySelector('option[value="' + s.replace(/"/g, '\\"') + '"]')) return;
+    var n = LA.filter(function (l) { return l.search === s; }).length;
+    $("f-search").insertAdjacentHTML("beforeend", '<option value="' + esc(s) + '">' + esc(s) + " (" + n + ", non salvata)</option>");
+  }
+  var byC = {};
+  L.forEach(function (l) { byC[l.country] = (byC[l.country] || 0) + 1; });
+  Object.keys(byC).sort(function (a, b) { return cname(a).localeCompare(cname(b), "it"); }).forEach(function (c) {
+    $("f-country").insertAdjacentHTML("beforeend", '<option value="' + esc(c) + '">' + esc(cname(c)) + " (" + byC[c] + ")</option>");
+  });
+  var byS = {};
+  L.forEach(function (l) { sitesOf(l).forEach(function (s) { byS[s] = (byS[s] || 0) + 1; }); });
+  Object.keys(byS).sort(function (a, b) { return byS[b] - byS[a]; }).forEach(function (s) {
+    $("f-source").insertAdjacentHTML("beforeend", '<option value="' + esc(s) + '">' + esc(sname(s)) + " (" + byS[s] + ")</option>");
+  });
+  var years = {};
+  L.forEach(function (l) { if (l.year) years[l.year] = 1; });
+  Object.keys(years).sort().reverse().forEach(function (y) {
+    $("f-year").insertAdjacentHTML("beforeend", '<option value="' + y + '">' + y + "</option>");
+  });
+
+  function num(v) { return v === "" ? null : Number(v); }
+  function filtered() {
+    var q = F.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    var pmin = num(F.pmin), pmax = num(F.pmax), km = num(F.km);
+    var out = (TEMP[F.search] ? LA : L).filter(function (l) {
+      if (F.search && l.search !== F.search) return false;
+      if (F.country && l.country !== F.country) return false;
+      if (F.source && sitesOf(l).indexOf(F.source) < 0) return false;
+      if (F.cond && l.condition !== F.cond) return false;
+      if (F.year && String(l.year) !== F.year) return false;
+      if (pmin != null && (l.price_eur == null || l.price_eur < pmin)) return false;
+      if (pmax != null && (l.price_eur == null || l.price_eur > pmax)) return false;
+      if (km != null && l.km != null && l.km > km) return false;
+      for (var i = 0; i < q.length; i++) if (l._text.indexOf(q[i]) < 0) return false;
+      return true;
+    });
+    var big = Number.MAX_VALUE;
+    var cmp = {
+      "price-asc": function (a, b) { return (a.price_eur == null ? big : a.price_eur) - (b.price_eur == null ? big : b.price_eur); },
+      "price-desc": function (a, b) { return (b.price_eur || 0) - (a.price_eur || 0); },
+      "km-asc": function (a, b) { return (a.km == null ? big : a.km) - (b.km == null ? big : b.km); },
+      "new": function (a, b) { return String(b.first_seen).localeCompare(String(a.first_seen)); },
+      "year-desc": function (a, b) { return (b.year || 0) - (a.year || 0) || (a.km || 0) - (b.km || 0); }
+    }[sortBy];
+    return out.sort(cmp);
+  }
+
+  function card(l) {
+    var photo = l.photos && l.photos[0];
+    var badges = '<span class="badge">' + (l.condition === "new" ? "Auto nuova" : "Usata") + "</span>";
+    if (l._fresh) badges += '<span class="badge fresh">Nuovo annuncio</span>';
+    if (l._drop) badges += '<span class="badge drop">Prezzo sceso di ' + nf.format(l._drop) + " €</span>";
+    var orig = (l.currency && l.currency !== "EUR" && l.price != null) ? '<span class="orig">' + esc(l.currency) + " " + nf.format(l.price) + "</span>" : "";
+    var version = l.version && l.version !== l.model ? l.version : "";
+    return '<a class="card" href="#/annuncio/' + encodeURIComponent(l.id) + '">' +
+      '<div class="ph">' + (photo ? '<img loading="lazy" src="' + esc(small(photo)) + '" alt="">' : '<span class="none">Senza foto</span>') +
+      '<span class="badges">' + badges + "</span></div>" +
+      '<div class="cbody"><div class="where">' + plate(l.country) + "<span>" + esc(cname(l.country)) + (l.city ? ", " + esc(l.city) : "") + "</span></div>" +
+      "<h3>" + esc([l.make, l.model].filter(Boolean).join(" ") || l.title) + "</h3>" +
+      (version ? '<p class="ver">' + esc(version) + "</p>" : "") +
+      '<div class="pricebox"><span class="price">' + eur(l.price_eur) + "</span>" + orig + "</div>" +
+      '<dl class="facts"><div><dt>Chilometri</dt><dd>' + (l.km != null ? nf.format(l.km) : "n.d.") + "</dd></div>" +
+      "<div><dt>" + (l.first_registration ? "Immatricolata" : "Anno") + "</dt><dd>" + esc(regLabel(l)) + "</dd></div></dl>" +
+      '<p class="srcline">Su <strong>' + esc(sname(l.source)) + "</strong>" +
+        ((l.also || []).length ? ", anche su " + esc(l.also.map(function (x) { return sname(x.source); }).join(", ")) : "") + "</p>" +
+      "</div></a>";
+  }
+
+  var PAGE = 60, shown = PAGE, io = null;
+  function renderList() {
+    var res = filtered();
+    $("count").textContent = res.length === 1 ? "1 annuncio" : nf.format(res.length) + " annunci";
+    $("empty").hidden = res.length > 0;
+    $("grid").innerHTML = res.slice(0, shown).map(card).join("") +
+      (res.length > shown ? '<div id="more" style="grid-column:1/-1;height:1px"></div>' : "");
+    var more = $("more");
+    if (io) io.disconnect();
+    if (more && "IntersectionObserver" in window) {
+      io = new IntersectionObserver(function (e) { if (e[0].isIntersecting) { shown += PAGE; renderList(); } }, { rootMargin: "800px" });
+      io.observe(more);
+    }
+    var active = ["q", "search", "country", "source", "cond", "pmin", "pmax", "km", "year"].filter(function (k) { return F[k] !== ""; }).length;
+    $("factive").textContent = active ? active + (active === 1 ? " attivo" : " attivi") : "";
+  }
+  function update() { shown = PAGE; renderList(); renderTempBar(); saveState(); }
+  function renderTempBar() {
+    var bar = $("tempbar");
+    bar.hidden = !(F.search && TEMP[F.search]);
+    if (bar.hidden) return;
+    bar.innerHTML = "<p><strong>Ricerca non salvata.</strong> Non si aggiorna da sola e si cancella dopo 7 giorni.</p>" +
+      (DATA.server ? '<button class="btn primary" type="button" id="tb-save">Salva questa ricerca</button>' : "");
+    if (DATA.server) $("tb-save").onclick = function () {
+      api("/api/searches/save", { name: F.search, saved: true }).then(function () { location.reload(); })
+        .catch(function (e) { alert(e.message); });
+    };
+  }
+
+  [["f-q", "q"], ["f-search", "search"], ["f-country", "country"], ["f-source", "source"], ["f-pmin", "pmin"], ["f-pmax", "pmax"], ["f-km", "km"], ["f-year", "year"]].forEach(function (p) {
+    $(p[0]).addEventListener("input", function (e) { F[p[1]] = e.target.value; update(); });
+  });
+  $("f-search").addEventListener("change", function () {
+    // lasciata una ricerca non salvata: la sua voce sparisce dal filtro
+    Array.prototype.slice.call(this.options).forEach(function (o) {
+      if (TEMP[o.value] && o.value !== F.search) o.remove();
+    });
+  });
+  $("f-cond").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    F.cond = b.dataset.v;
+    Array.prototype.forEach.call(this.children, function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+    update();
+  });
+  $("sort").addEventListener("change", function (e) { sortBy = e.target.value; update(); });
+  function reset() {
+    Object.keys(F).forEach(function (k) { F[k] = ""; });
+    ["f-q", "f-search", "f-country", "f-source", "f-pmin", "f-pmax", "f-km", "f-year"].forEach(function (id) { $(id).value = ""; });
+    Array.prototype.forEach.call($("f-cond").children, function (x, i) { x.setAttribute("aria-pressed", String(i === 0)); });
+    update();
+  }
+  $("reset").addEventListener("click", reset);
+  $("reset2").addEventListener("click", reset);
+  $("ftoggle").addEventListener("click", function () {
+    var open = $("filters").classList.toggle("open");
+    this.setAttribute("aria-expanded", String(open));
+  });
+
+  // ---------- scheda ----------
+  function chart(h) {
+    var pts = h.filter(function (x) { return x.eur != null; });
+    if (pts.length < 3) return "";
+    var vals = pts.map(function (x) { return x.eur; });
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals), span = (hi - lo) || 1;
+    var W = 300, H = 72, d = "";
+    pts.forEach(function (x, i) {
+      var px = (i / (pts.length - 1)) * (W - 8) + 4, py = H - 6 - ((x.eur - lo) / span) * (H - 12);
+      d += (i ? (" H" + px.toFixed(1) + " V" + py.toFixed(1)) : ("M" + px.toFixed(1) + " " + py.toFixed(1)));
+    });
+    return '<svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" role="img" aria-label="Andamento del prezzo">' +
+      '<path d="' + d + '" fill="none" stroke="#18222E" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>';
+  }
+
+  function spec(label, value, isNum) {
+    return "<div><dt>" + label + "</dt><dd" + (isNum ? ' class="num"' : "") + ">" + (value == null || value === "" ? "n.d." : value) + "</dd></div>";
+  }
+
+  var gi = 0, current = null;
+  function showPhoto(i) {
+    var p = current.photos; if (!p.length) return;
+    gi = (i + p.length) % p.length;
+    $("gimg").src = p[gi];
+    $("gcount").textContent = (gi + 1) + " / " + p.length;
+    Array.prototype.forEach.call(document.querySelectorAll(".thumbs button"), function (b, k) { b.setAttribute("aria-current", String(k === gi)); });
+    var t = document.querySelectorAll(".thumbs button")[gi];
+    if (t && t.scrollIntoView) t.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
+
+  function renderDetail(id) {
+    var l = BYID[id];
+    var v = $("detail-view");
+    if (!l) {
+      v.innerHTML = backLink() + '<div class="empty"><h3>Annuncio non trovato</h3>' +
+        "<p>Non è tra gli annunci salvati. Torna all'elenco per vedere quelli online.</p></div>";
+      return;
+    }
+    current = l; gi = 0;
+    var p = l.photos || [];
+    var gallery = p.length
+      ? '<div class="main"><img id="gimg" src="' + esc(p[0]) + '" alt="Foto di ' + esc(l.title) + '">' +
+        (p.length > 1 ? '<button class="gnav prev" type="button" id="gprev" aria-label="Foto precedente">‹</button><button class="gnav next" type="button" id="gnext" aria-label="Foto successiva">›</button>' : "") +
+        '<span class="gcount" id="gcount">1 / ' + p.length + "</span></div>" +
+        (p.length > 1 ? '<div class="thumbs">' + p.map(function (u, i) {
+          return '<button type="button" data-i="' + i + '" aria-label="Foto ' + (i + 1) + '" aria-current="' + (i === 0) + '"><img loading="lazy" src="' + esc(small(u)) + '" alt=""></button>';
+        }).join("") + "</div>" : "")
+      : '<div class="main"><span class="none" style="position:absolute;inset:0;display:grid;place-items:center">Nessuna foto</span></div>';
+    var cv = l.power_kw ? nf.format(l.power_kw) + " kW (" + nf.format(Math.round(l.power_kw * 1.35962)) + " CV)" : null;
+    var orig = (l.currency && l.currency !== "EUR" && l.price != null)
+      ? '<p class="orig">Prezzo originale: ' + esc(l.currency) + " " + nf.format(l.price) + "</p>" : "";
+    var hist = (l.history || []).slice().reverse();
+    var badges = '<span class="badge">' + (l.condition === "new" ? "Auto nuova" : "Usata") + "</span>" +
+      (l._fresh ? '<span class="badge fresh">Nuovo annuncio</span>' : "") +
+      (l._drop ? '<span class="badge drop">Prezzo sceso di ' + nf.format(l._drop) + " €</span>" : "");
+    var goneEv = EV.filter(function (e) { return e.listing_id === l.id && e.type === "removed"; })[0];
+    v.innerHTML = backLink() +
+      (l.active === false ? '<p class="gonebar">Annuncio non più online' +
+        (goneEv ? " dal " + df.format(new Date(goneEv.created_at)) : "") +
+        ". I dati sono quelli dell'ultima volta che l'abbiamo visto.</p>" : "") +
+      '<div class="dgrid"><div class="gallery">' + gallery + "</div>" +
+      '<div class="info">' +
+        '<div class="where">' + plate(l.country, true) + "<span>" + esc(cname(l.country)) + (l.city ? ", " + esc(l.city) : "") + "</span></div>" +
+        "<h1>" + esc([l.make, l.model].filter(Boolean).join(" ") || l.title) + "</h1>" +
+        (l.version ? '<p class="ver">' + esc(l.version) + "</p>" : "") +
+        '<div class="badges" style="position:static;margin-top:10px">' + badges + "</div>" +
+        '<span class="price">' + eur(l.price_eur) + "</span>" + orig +
+        '<a class="cta" href="' + esc(l.url) + '" target="_blank" rel="noopener">Apri l\'annuncio su ' + esc(SOURCES[l.source] || l.source) + "</a>" +
+        ((l.also || []).length ? '<p class="also">La stessa auto è anche su ' + l.also.map(function (x) {
+          return '<a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(sname(x.source)) + "</a> (" + eur(x.price_eur) + ")";
+        }).join(", ") + ".</p>" : "") +
+        (l.dup_of && BYID[l.dup_of] ? '<p class="also">Stessa auto anche su <a href="#/annuncio/' + encodeURIComponent(l.dup_of) + '">' +
+          esc(sname(BYID[l.dup_of].source)) + "</a>.</p>" : "") +
+        '<p class="src">Si apre in una nuova scheda. Prezzo e disponibilità vanno confermati con il venditore.</p>' +
+        '<dl class="specs">' +
+          spec("Chilometri", l.km != null ? nf.format(l.km) + " km" : null, true) +
+          spec("Anno", l.year, true) +
+          spec("Prima immatricolazione", esc(l.first_registration), true) +
+          spec("Potenza", cv, true) +
+          spec("Alimentazione", esc(FUEL[l.fuel] || l.fuel)) +
+          spec("Condizione", l.condition === "new" ? "Nuova" : "Usata") +
+          spec("Paese", esc(cname(l.country))) +
+          spec("Città", esc(l.city)) +
+          spec("Venditore", esc(l.seller)) +
+          spec("Tipo di venditore", l.seller_type === "dealer" ? "Concessionario" : (l.seller_type ? "Privato" : null)) +
+          spec("Fonte", esc(SOURCES[l.source] || l.source)) +
+          spec("Ricerca", esc(l.search)) +
+          spec("Visto la prima volta", l.first_seen ? dtf.format(new Date(l.first_seen)) : null) +
+          spec("Visto l'ultima volta", l.last_seen ? dtf.format(new Date(l.last_seen)) : null) +
+        "</dl>" +
+        '<section class="hist"><h2>Storico del prezzo</h2>' + chart(l.history || []) +
+          (hist.length ? "<table>" + hist.map(function (x) {
+            return "<tr><td>" + df.format(new Date(x.at)) + "</td><td>" + eur(x.eur) + "</td></tr>";
+          }).join("") + "</table>" : "<p>Nessuna rilevazione.</p>") +
+          (hist.length === 1 ? "<p>Prezzo invariato da quando l'annuncio è in elenco.</p>" : "") +
+        "</section>" +
+      "</div></div>";
+    if (p.length > 1) {
+      $("gprev").onclick = function () { showPhoto(gi - 1); };
+      $("gnext").onclick = function () { showPhoto(gi + 1); };
+      v.querySelector(".thumbs").onclick = function (e) {
+        var b = e.target.closest("button"); if (b) showPhoto(Number(b.dataset.i));
+      };
+    }
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if ($("detail-view").hidden || !current || !current.photos || current.photos.length < 2) return;
+    if (/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+    if (e.key === "ArrowLeft") showPhoto(gi - 1);
+    if (e.key === "ArrowRight") showPhoto(gi + 1);
+  });
+
+  // ---------- notifiche ----------
+  var EVLABEL = { "new": "Nuovo annuncio", price_drop: "Prezzo sceso", price_up: "Prezzo salito", removed: "Non più online" };
+  var NF = { type: "", search: "" };
+  (DATA.searches || []).forEach(function (s) {
+    $("n-search").insertAdjacentHTML("beforeend", '<option value="' + esc(s) + '">' + esc(s) + "</option>");
+  });
+  function lastRead() { return store.get(READ_KEY) || ""; }
+  function isUnread(e) { return e.created_at > lastRead(); }
+  function updateUnread() {
+    var n = EV.filter(isUnread).length;
+    $("unread").hidden = n === 0;
+    $("unread").textContent = n > 99 ? "99+" : String(n);
+    $("nav-notif").setAttribute("aria-label", "Notifiche" + (n ? ", " + n + " da leggere" : ""));
+    $("markread").disabled = n === 0;
+    return n;
+  }
+  function dayLabel(iso) {
+    var d = new Date(iso), t = new Date();
+    var key = function (x) { return x.getFullYear() + "-" + x.getMonth() + "-" + x.getDate(); };
+    var y = new Date(t.getTime() - DAY);
+    if (key(d) === key(t)) return "Oggi";
+    if (key(d) === key(y)) return "Ieri";
+    var s = new Intl.DateTimeFormat("it-IT", { weekday: "long", day: "numeric", month: "long" }).format(d);
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+  var tf = new Intl.DateTimeFormat("it-IT", { hour: "2-digit", minute: "2-digit" });
+  function evRow(e) {
+    var l = BYID[e.listing_id];
+    var photo = l.photos && l.photos[0];
+    var label = EVLABEL[e.type] || e.type, cls = { "new": "fresh", price_drop: "drop", price_up: "up", removed: "gone" }[e.type];
+    if (e.type === "price_drop" && e.old_price_eur != null) label = "Prezzo sceso di " + nf.format(e.old_price_eur - e.new_price_eur) + " €";
+    if (e.type === "price_up" && e.old_price_eur != null) label = "Prezzo salito di " + nf.format(e.new_price_eur - e.old_price_eur) + " €";
+    var price = e.type === "removed" ? e.old_price_eur : e.new_price_eur;
+    var old = (e.type === "price_drop" || e.type === "price_up") && e.old_price_eur != null ? "<s>" + eur(e.old_price_eur) + "</s>" : "";
+    var version = l.version && l.version !== l.model ? l.version : "";
+    var unread = isUnread(e);
+    return '<li><a class="ev' + (unread ? " unread" : "") + (e.type === "removed" ? " gone" : "") + '" href="#/annuncio/' + encodeURIComponent(l.id) + '">' +
+      '<span class="thumb">' + (photo ? '<img loading="lazy" src="' + esc(small(photo)) + '" alt="">' : "") + "</span>" +
+      '<span class="evbody"><span class="badge ' + cls + '">' + esc(label) + "</span>" +
+      (unread ? '<span class="unread-tag">Da leggere</span>' : "") +
+      "<h3>" + esc([l.make, l.model].filter(Boolean).join(" ") || l.title) + (version ? " <span>" + esc(version) + "</span>" : "") + "</h3>" +
+      '<span class="where">' + plate(l.country) + "<span>" + esc(cname(l.country)) + (l.city ? ", " + esc(l.city) : "") + "</span></span></span>" +
+      '<span class="evprice">' + old + "<strong>" + eur(price) + "</strong><time datetime=\"" + esc(e.created_at) + "\">" + tf.format(new Date(e.created_at)) + "</time></span>" +
+      "</a></li>";
+  }
+  function renderNotif() {
+    var n = updateUnread();
+    var list = EV.filter(function (e) {
+      var l = BYID[e.listing_id];
+      return l && (!NF.type || e.type === NF.type) && (!NF.search || l.search === NF.search);
+    });
+    $("nsummary").textContent = EV.length
+      ? (n ? n + (n === 1 ? " notifica da leggere" : " notifiche da leggere") : "Nessuna notifica da leggere") +
+        ". Qui trovi nuovi annunci, cambi di prezzo e annunci tolti degli ultimi 90 giorni."
+      : "";
+    if (!EV.length) {
+      $("nlist").innerHTML = '<div class="empty"><h3>Ancora nessuna notifica</h3><p>A ogni aggiornamento qui compaiono i nuovi annunci, ' +
+        "i cambi di prezzo e gli annunci tolti dai venditori. La prima raccolta non conta: serve come punto di partenza.</p></div>";
+      return;
+    }
+    if (!list.length) {
+      $("nlist").innerHTML = '<div class="empty"><h3>Nessuna notifica con questi filtri</h3><p>Scegli "Tutte" o un altro modello.</p></div>';
+      return;
+    }
+    var html = "", day = null, count = {};
+    list.forEach(function (e) { var k = dayLabel(e.created_at); count[k] = (count[k] || 0) + 1; });
+    list.forEach(function (e) {
+      var k = dayLabel(e.created_at);
+      if (k !== day) {
+        if (day !== null) html += "</ul>";
+        html += '<h3 class="day">' + esc(k) + "<small>" + count[k] + (count[k] === 1 ? " notifica" : " notifiche") + '</small></h3><ul class="evlist">';
+        day = k;
+      }
+      html += evRow(e);
+    });
+    $("nlist").innerHTML = html + "</ul>";
+  }
+  $("n-type").addEventListener("change", function (e) { NF.type = e.target.value; renderNotif(); saveState(); });
+  $("n-search").addEventListener("change", function (e) { NF.search = e.target.value; renderNotif(); saveState(); });
+  $("markread").addEventListener("click", function () {
+    var newest = EV.reduce(function (m, e) { return e.created_at > m ? e.created_at : m; }, lastRead());
+    store.set(READ_KEY, newest);
+    renderNotif();
+  });
+
+  // ---------- navigazione ----------
+  var listScroll = 0, from = "list";
+  function backLink() {
+    return from === "notif" ? '<a class="back" href="#/notifiche">Torna alle notifiche</a>' : '<a class="back" href="#/">Torna all\'elenco</a>';
+  }
+  function show(view) {
+    ["list-view", "detail-view", "notif-view", "cerca-view"].forEach(function (id) { $(id).hidden = id !== view; });
+    $("nav-cerca").setAttribute("aria-current", view === "cerca-view" ? "page" : "false");
+    $("nav-list").setAttribute("aria-current", view === "list-view" ? "page" : "false");
+    $("nav-notif").setAttribute("aria-current", view === "notif-view" ? "page" : "false");
+  }
+  function route() {
+    var m = location.hash.match(/^#\/annuncio\/(.+)$/);
+    if (m) {
+      if (!$("list-view").hidden) { listScroll = window.scrollY; from = "list"; }
+      if (!$("notif-view").hidden) from = "notif";
+      show("detail-view");
+      renderDetail(decodeURIComponent(m[1]));
+      window.scrollTo(0, 0);
+      var h = document.querySelector("#detail-view h1"); document.title = (h ? h.textContent + " | " : "") + "ImportHelper";
+    } else if (location.hash === "#/cerca" && DATA.server) {
+      current = null;
+      show("cerca-view");
+      openCerca();
+      window.scrollTo(0, 0);
+      document.title = "Cerca un'auto | ImportHelper";
+    } else if (location.hash === "#/notifiche") {
+      current = null; from = "notif";
+      show("notif-view");
+      renderNotif();
+      window.scrollTo(0, 0);
+      document.title = "Notifiche | ImportHelper";
+    } else {
+      current = null; from = "list";
+      show("list-view");
+      document.title = "ImportHelper: auto in vendita in Europa";
+      window.scrollTo(0, listScroll);
+    }
+  }
+
+  // ---------- filtri conservati tra un ricaricamento e l'altro ----------
+  function saveState() {
+    try { sessionStorage.setItem("importhelper.stato", JSON.stringify({ F: F, sort: sortBy, NF: NF, scroll: listScroll })); } catch (e) { /* niente */ }
+  }
+  function loadState() {
+    var st; try { st = JSON.parse(sessionStorage.getItem("importhelper.stato") || "null"); } catch (e) { st = null; }
+    if (!st) return;
+    Object.keys(F).forEach(function (k) { if (st.F && st.F[k] != null) F[k] = st.F[k]; });
+    if (F.search && TEMP[F.search]) addTempOption(F.search);
+    else if (F.search && (DATA.searches || []).indexOf(F.search) < 0) F.search = "";   // ricerca eliminata
+    [["f-q", "q"], ["f-search", "search"], ["f-country", "country"], ["f-source", "source"], ["f-pmin", "pmin"], ["f-pmax", "pmax"], ["f-km", "km"], ["f-year", "year"]]
+      .forEach(function (p) { $(p[0]).value = F[p[1]]; });
+    Array.prototype.forEach.call($("f-cond").children, function (x) { x.setAttribute("aria-pressed", String(x.dataset.v === F.cond)); });
+    if (st.sort) { sortBy = st.sort; $("sort").value = sortBy; }
+    if (st.NF) { NF = st.NF; $("n-type").value = NF.type || ""; $("n-search").value = NF.search || ""; }
+    listScroll = st.scroll || 0;
+  }
+
+  // Il sito viene rigenerato ogni 3 ore: se la pagina resta aperta si ricarica da sola
+  // ogni 15 minuti, ma non mentre si guarda una scheda o si scrive in un filtro.
+  var LOADED = Date.now();
+  setInterval(function () {
+    if (Date.now() - LOADED < 15 * 60e3) return;
+    if (!$("detail-view").hidden || !$("cerca-view").hidden) return;
+    if (/INPUT|SELECT|TEXTAREA/.test((document.activeElement || {}).tagName || "")) return;
+    if (!$("list-view").hidden) listScroll = window.scrollY;
+    saveState();
+    location.reload();
+  }, 60e3);
+  // con il server: se i dati cambiano (ricerca eliminata o aggiunta, raccolta finita) la pagina si aggiorna entro un minuto
+  if (DATA.server && DATA.version) setInterval(function () {
+    if (!$("detail-view").hidden || !$("cerca-view").hidden) return;
+    if (/INPUT|SELECT|TEXTAREA/.test((document.activeElement || {}).tagName || "")) return;
+    fetch("/api/version").then(function (r) { return r.json(); }).then(function (v) {
+      if (v.version && v.version !== DATA.version) {
+        if (!$("list-view").hidden) listScroll = window.scrollY;
+        saveState();
+        location.reload();
+      }
+    }).catch(function () { /* server spento: resta la pagina com'è */ });
+  }, 60e3);
+  window.addEventListener("pagehide", function () { if (!$("list-view").hidden) listScroll = window.scrollY; saveState(); });
+
+  $("total").textContent = nf.format(L.length) + " annunci";
+  $("updated").textContent = DATA.generated ? "aggiornato il " + dtf.format(new Date(DATA.generated)) : "";
+  // ---------- Cerca un'auto (solo con il server locale) ----------
+  function api(path, body) {
+    var opt = body === undefined ? {} : {
+      method: "POST", body: JSON.stringify(body),
+      headers: { "Content-Type": "application/json", "X-ImportHelper": "1" }
+    };
+    return fetch(path, opt).then(function (r) {
+      return r.json().then(function (j) {
+        if (!r.ok) throw new Error(j.error || "Errore " + r.status);
+        return j;
+      });
+    }).catch(function (e) {
+      if (e instanceof TypeError) throw new Error("Il programma ImportHelper non risponde. Riapri l'icona ImportHelper.");
+      throw e;
+    });
+  }
+  var poll = null, watching = null, makesLoaded = false, lastModelsFor = "";
+  function words(v) { return v.split(",").map(function (w) { return w.trim(); }).filter(Boolean); }
+  function previewName() {
+    var mk = $("s-make").value.trim(), md = $("s-model").value.trim();
+    var must = words($("s-must").value).map(function (w) {
+      return w !== w.toLowerCase() ? w : (/\d/.test(w) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1));
+    });
+    var y1 = $("s-y1").value, y2 = $("s-y2").value;
+    var yrs = y1 && y2 ? (Math.min(y1, y2) + "–" + Math.max(y1, y2)) : (y1 ? "dal " + y1 : (y2 ? "fino al " + y2 : ""));
+    var name = [mk, md, must.join(" "), yrs].filter(Boolean).join(" ");
+    $("sname").textContent = name || "Marca e modello";
+    $("sname").className = name ? "" : "blank";
+  }
+  function loadModels() {
+    var mk = $("s-make").value.trim();
+    if (!mk || mk.toLowerCase() === lastModelsFor) return;
+    lastModelsFor = mk.toLowerCase();
+    api("/api/models?make=" + encodeURIComponent(mk)).then(function (list) {
+      $("dl-models").innerHTML = list.map(function (m) { return '<option value="' + esc(m.label) + '">'; }).join("");
+    }).catch(function () { /* il suggerimento è facoltativo */ });
+  }
+  function openCerca() {
+    if (!makesLoaded) {
+      makesLoaded = true;
+      $("sstars").innerHTML = STARS;
+      api("/api/makes").then(function (list) {
+        $("dl-makes").innerHTML = list.map(function (m) { return '<option value="' + esc(m.label) + '">'; }).join("");
+      }).catch(function () { makesLoaded = false; });
+    }
+    renderSearches();
+    checkStatus();
+  }
+  ["s-make", "s-model", "s-y1", "s-y2", "s-must"].forEach(function (id) { $(id).addEventListener("input", previewName); });
+  $("s-make").addEventListener("change", loadModels);
+  $("s-model").addEventListener("focus", loadModels);
+  $("sform").addEventListener("submit", function (e) {
+    e.preventDefault();
+    $("serr").hidden = true;
+    var body = {
+      make: $("s-make").value.trim(), model: $("s-model").value.trim(),
+      year_min: $("s-y1").value, year_max: $("s-y2").value,
+      must_contain: words($("s-must").value), exclude_words: words($("s-excl").value),
+      price_min_eur: $("s-pmin").value, save: $("s-save").checked
+    };
+    if (!body.make || !body.model) { $("serr").textContent = "Scrivi marca e modello."; $("serr").hidden = false; return; }
+    $("s-go").disabled = true;
+    api("/api/searches", body).then(function (res) {
+      watching = res.search.name;
+      renderSearches();
+      checkStatus();
+    }).catch(function (err) {
+      $("serr").textContent = err.message; $("serr").hidden = false;
+    }).then(function () { $("s-go").disabled = false; });
+  });
+
+  var STATE = { waiting: "in attesa", running: "", done: "", skipped: "non supportato", error: "" };
+  function progressRow(s) {
+    var detail = s.state === "done" ? (s.found ? s.found + " letti, " + s.kept + " corrispondono" : "nessun annuncio trovato")
+      : (s.state === "running" ? (s.detail || "in corso") : (s.detail || STATE[s.state] || ""));
+    return '<li class="' + esc(s.state) + '"><span class="sn">' + esc(sname(s.source)) + '</span><span class="sd">' + esc(detail) +
+      '</span><span class="sk">' + (s.state === "done" ? nf.format(s.kept) : "") + "</span></li>";
+  }
+  var lastStatus = null;
+  function renderProgress(st) {
+    lastStatus = st;
+    var box = $("sprog"), run = st.running;
+    var name = run ? run.search : (watching && st.last && st.last.search === watching ? watching : null);
+    if (!name) { box.hidden = true; return; }
+    box.hidden = false;
+    if (run) {
+      var q = st.queue.length ? '<p class="hint" style="margin:0;padding:8px 16px">Poi: ' + esc(st.queue.join(", ")) + "</p>" : "";
+      box.innerHTML = "<header><h3>Sto cercando " + esc(run.search) + '</h3><span class="tot">' + nf.format(run.kept_total) +
+        " annunci finora</span></header><ul class=\"srows\">" + run.sources.map(progressRow).join("") + "</ul>" + q;
+      return;
+    }
+    var last = st.last;
+    var saved = SEARCHES.filter(function (s) { return s.name === last.search; })[0];
+    if (SEARCHES.length && !saved) { box.hidden = true; return; }   // ricerca eliminata nel frattempo
+    box.innerHTML = "<header><h3>" + esc(last.search) + '</h3><span class="tot">' + nf.format(last.kept) + " annunci</span></header>" +
+      '<div class="sdone"><p>' + (last.error ? "La ricerca si è fermata: " + esc(last.error) :
+        (last.kept ? "Ricerca finita." : "Nessun annuncio trovato con questi criteri. Prova a togliere qualche parola o ad allargare gli anni.")) +
+      "</p>" + (last.kept ? '<button class="btn primary" type="button" id="see">Vedi gli annunci</button>' : "") +
+      (saved && !saved.saved ? '<button class="btn" type="button" id="savenow">Salva questa ricerca</button>' : "") + "</div>";
+    if ($("see")) $("see").onclick = function () { openResults(last.search); };
+    if ($("savenow")) $("savenow").onclick = function () { setSaved(last.search, true); };
+  }
+  var SEARCHES = [];
+  function openResults(name) {
+    F.search = name; F.q = ""; listScroll = 0;
+    saveState();
+    location.hash = "#/";
+    location.reload();
+  }
+  function setSaved(name, saved) {
+    return api("/api/searches/save", { name: name, saved: saved }).then(renderSearches).catch(function (e) { alert(e.message); });
+  }
+  function searchItem(s) {
+    var when = s.last_update ? "aggiornata il " + dtf.format(new Date(s.last_update)) : "non ancora cercata";
+    var chip = s.state === "running" ? '<span class="chip">In corso</span>' : (s.state === "queued" ? '<span class="chip q">In coda</span>' : "");
+    return '<li><div class="t"><strong>' + esc(s.name) + "</strong>" + chip + '</div><p class="meta">' +
+      nf.format(s.active) + (s.active === 1 ? " annuncio" : " annunci") + ", " + when + "</p><div class=\"acts\">" +
+      (s.active ? '<button class="btn" type="button" data-a="see">Vedi annunci</button>' : "") +
+      '<button class="btn" type="button" data-a="refresh">Aggiorna ora</button>' +
+      (s.saved ? '<button class="btn" type="button" data-a="unsave">Non salvare più</button>'
+               : '<button class="btn primary" type="button" data-a="save">Salva</button>') +
+      '<button class="btn quiet" type="button" data-a="delete">Elimina</button></div></li>';
+  }
+  function renderSearches() {
+    return api("/api/searches").then(function (list) {
+      SEARCHES = list;
+      if (lastStatus) renderProgress(lastStatus);   // ora sappiamo se l'ultima ricerca è salvata
+      var mine = list.filter(function (s) { return s.saved; });
+      var recent = list.filter(function (s) { return !s.saved; })
+        .sort(function (a, b) { return String(b.last_run || b.created).localeCompare(String(a.last_run || a.created)); });
+      $("mine").innerHTML = mine.length ? mine.map(searchItem).join("") : '<li class="meta">Nessuna ricerca salvata.</li>';
+      $("recent").innerHTML = recent.length ? recent.slice(0, 8).map(searchItem).join("") : '<li class="meta">Nessuna ricerca recente.</li>';
+      [["mine", mine], ["recent", recent]].forEach(function (pair) {
+        Array.prototype.forEach.call($(pair[0]).children, function (li, i) {
+          var s = pair[1][i];
+          if (!s) return;
+          li.onclick = function (e) {
+            var a = e.target.closest("button"); if (!a) return;
+            var act = a.dataset.a;
+            if (act === "see") openResults(s.name);
+            if (act === "save") setSaved(s.name, true);
+            if (act === "unsave") setSaved(s.name, false);
+            if (act === "refresh") api("/api/searches/refresh", { name: s.name }).then(function () { watching = s.name; renderSearches(); checkStatus(); })
+              .catch(function (er) { alert(er.message); });
+            if (act === "delete" && confirm("Eliminare la ricerca \"" + s.name + "\"? I suoi annunci spariscono dal sito.")) {
+              api("/api/searches/delete", { name: s.name }).then(renderSearches).catch(function (er) { alert(er.message); });
+            }
+          };
+        });
+      });
+    }).catch(function (e) { $("mine").innerHTML = '<li class="meta">' + esc(e.message) + "</li>"; });
+  }
+  function checkStatus() {
+    api("/api/status").then(function (st) {
+      if (st.running && !watching) watching = st.running.search;
+      // riaprendo la pagina subito dopo una ricerca, il risultato resta visibile per mezz'ora
+      if (!watching && st.last && Date.now() - Date.parse(st.last.finished) < 30 * 60e3) watching = st.last.search;
+      renderProgress(st);
+      var busy = st.running || st.queue.length;
+      if (busy && !poll) poll = setInterval(checkStatus, 1500);
+      if (!busy && poll) { clearInterval(poll); poll = null; renderSearches(); }
+    }).catch(function () { /* riprova al prossimo giro */ });
+  }
+  if (DATA.server) $("nav-cerca").hidden = false;
+
+  loadState();
+  renderList();
+  renderTempBar();
+  updateUnread();
+  window.addEventListener("hashchange", route);
+  route();
+})();
+</script>
+</body>
+</html>

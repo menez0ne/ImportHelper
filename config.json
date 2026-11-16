@@ -1,0 +1,87 @@
+{
+  "database": "data/importhelper.db",
+  "searches": [],
+  "autoscout24": {
+    "domain": "https://www.autoscout24.it",
+    "countries": [
+      "D",
+      "A",
+      "B",
+      "E",
+      "F",
+      "I",
+      "L",
+      "NL"
+    ],
+    "max_pages": 20,
+    "delay_seconds": 3
+  },
+  "tesla": {
+    "markets": [
+      "DE",
+      "AT",
+      "CH",
+      "FR",
+      "BE",
+      "NL",
+      "LU",
+      "IT",
+      "ES",
+      "PT",
+      "IE",
+      "GB",
+      "SE",
+      "NO",
+      "DK",
+      "FI",
+      "PL",
+      "CZ"
+    ],
+    "conditions": [
+      "used",
+      "new"
+    ],
+    "delay_seconds": 3,
+    "enabled": false,
+    "note": "Inventario Tesla: blocca le richieste automatiche (403)."
+  },
+  "marktplaats": {
+    "domain": "https://www.marktplaats.nl",
+    "country": "NL",
+    "max_results": 500,
+    "delay_seconds": 3
+  },
+  "2dehands": {
+    "domain": "https://www.2dehands.be",
+    "country": "BE",
+    "max_results": 500,
+    "delay_seconds": 3
+  },
+  "otomoto": {
+    "max_pages": 10,
+    "delay_seconds": 3
+  },
+  "willhaben": {
+    "max_pages": 5,
+    "delay_seconds": 3
+  },
+  "blocket": {
+    "domain": "https://www.blocket.se",
+    "max_pages": 5,
+    "delay_seconds": 3
+  },
+  "finn": {
+    "domain": "https://www.finn.no",
+    "max_pages": 5,
+    "delay_seconds": 3
+  },
+  "disabled_sources": {
+    "mobile.de": "blocca le richieste automatiche (403)",
+    "leboncoin": "blocca le richieste automatiche (403, protezione anti-bot)",
+    "autoscout24.ch": "blocca le richieste automatiche (403)",
+    "subito": "blocca le richieste automatiche (403)",
+    "autotrader.co.uk": "blocca le richieste automatiche (403)",
+    "bilbasen": "pagina di verifica anti-bot (202 senza contenuto)",
+    "coches.net": "i risultati arrivano dopo, via JavaScript da un'API protetta: la pagina non contiene annunci"
+  }
+}
