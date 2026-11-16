@@ -88,8 +88,8 @@ if ($LASTEXITCODE -ne 0) { Fail "Non sono riuscito a creare l'attivita' automati
 Write-Host ""
 Write-Host "FATTO! ImportHelper e' installato." -ForegroundColor Green
 Write-Host "- Per aprirlo usa l'icona ImportHelper sul Desktop (o nel menu Start)."
-Write-Host "- La prima raccolta degli annunci parte da sola tra 5 minuti e dura un po'."
-Write-Host "  Nel frattempo puoi gia' usare 'Cerca un'auto' nel sito."
+Write-Host "- Per iniziare apri 'Cerca un'auto' nel sito, scrivi l'auto che ti interessa e salva la ricerca:"
+Write-Host "  le ricerche salvate si aggiornano da sole ogni 3 ore."
 Write-Host "- Non spostare ne' rinominare questa cartella (se lo fai, rilancia installa.bat)."
 Write-Host ""
 Write-Host "Apro il sito..."
