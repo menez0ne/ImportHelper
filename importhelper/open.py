@@ -49,10 +49,21 @@ def start_server() -> None:
 
 
 def open_in_browser(target: str) -> bool:
-    """Apre l'indirizzo con il browser predefinito. Su Windows os.startfile è il modo più affidabile."""
+    """Apre l'indirizzo con il browser predefinito.
+
+    Su Windows lo affidiamo a un processo separato (rundll32): con os.startfile la richiesta
+    al browser può perdersi se pythonw si chiude subito dopo, e il browser non si apre.
+    """
     if os.name == "nt":
         try:
+            subprocess.Popen(["rundll32.exe", "url.dll,FileProtocolHandler", target], close_fds=True)
+            log("browser chiesto a rundll32")
+            return True
+        except OSError as e:
+            log(f"rundll32 non riuscito: {e}")
+        try:
             os.startfile(target)  # type: ignore[attr-defined]
+            time.sleep(5)  # lascia al browser il tempo di ricevere la richiesta
             return True
         except OSError as e:
             log(f"os.startfile non riuscito: {e}")
@@ -61,12 +72,6 @@ def open_in_browser(target: str) -> bool:
             return True
     except Exception as e:  # noqa: BLE001
         log(f"webbrowser non riuscito: {e}")
-    if os.name == "nt":  # ultimo tentativo: lo stesso comando del Prompt dei comandi
-        try:
-            subprocess.Popen(["cmd", "/c", "start", "", target], creationflags=0x08000000)
-            return True
-        except OSError as e:
-            log(f"start non riuscito: {e}")
     return False
 
 
