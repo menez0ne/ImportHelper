@@ -130,7 +130,11 @@ button, input, select { font: inherit; color: inherit; }
 /* ---------- scheda annuncio ---------- */
 .detail { max-width: 1320px; margin: 0 auto; padding: 20px clamp(16px, 4vw, 48px) 64px; }
 .back { display: inline-block; margin-bottom: 16px; font-weight: 600; }
-.dgrid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr); gap: 32px; align-items: start; }
+.dgrid {
+  display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr); grid-template-rows: auto 1fr;
+  grid-template-areas: "gallery info" "desc info"; gap: 32px; align-items: start;
+}
+.dgrid .gallery { grid-area: gallery; } .dgrid .info { grid-area: info; } .dgrid .desc { grid-area: desc; }
 .gallery .main { position: relative; aspect-ratio: 4 / 3; background: #CFD8D3; border-radius: 6px; overflow: hidden; }
 .gallery .main img { width: 100%; height: 100%; object-fit: contain; background: #10161D; }
 .gnav {
@@ -166,6 +170,34 @@ button, input, select { font: inherit; color: inherit; }
 .hist td:last-child { text-align: right; font: 600 1.15rem/1.2 var(--cond); font-variant-numeric: tabular-nums; }
 .hist p { color: var(--muted); margin: 0; }
 .hist svg { width: 100%; height: 72px; display: block; margin-bottom: 8px; }
+
+/* descrizione del venditore: il testo è un foglio come il libretto, con la lingua in alto */
+.desc { margin-top: -8px; }
+.dhead { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 16px; margin-bottom: 10px; }
+.dhead h2 { font: 600 1.35rem/1.2 var(--cond); margin: 0; }
+.desc .seg { grid-template-columns: repeat(2, auto); }
+.desc .seg button { padding: 6px 12px; }
+.dtext {
+  position: relative; margin: 0; padding: 16px 20px; background: var(--sheet);
+  border: 1.5px solid var(--ink); border-radius: 6px; white-space: pre-line; overflow-wrap: anywhere;
+  font-size: 1rem; line-height: 1.6; max-width: 76ch;
+}
+.dtext.clip { max-height: 19.5em; overflow: hidden; }
+.dtext.clip::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4.5em;
+  background: linear-gradient(rgba(246, 248, 246, 0), var(--sheet));
+}
+.dmore { margin-top: 8px; padding: 0; border: 0; background: none; font-weight: 600; text-decoration: underline; cursor: pointer; color: var(--ink); }
+.dnote { margin: 8px 0 0; color: var(--muted); font-size: 0.85rem; max-width: 76ch; }
+.dwait { margin: 0; color: var(--muted); }
+.dwait .bar { display: block; height: 0.9em; margin: 10px 0 0; border-radius: 3px; background: var(--line); max-width: 76ch; }
+.dwait .bar + .bar { width: 82%; } .dwait .bar + .bar + .bar { width: 64%; }
+.derr { margin: 0; padding: 12px 14px; border: 1.5px solid var(--muted); border-radius: 4px; background: #D5DCD8; }
+.derr button { margin-left: 8px; padding: 4px 10px; border: 1.5px solid var(--ink); border-radius: 4px; background: var(--sheet); font-weight: 600; cursor: pointer; }
+@media (prefers-reduced-motion: no-preference) {
+  .dwait .bar { animation: dpulse 1.4s ease-in-out infinite alternate; }
+  @keyframes dpulse { from { opacity: 0.45; } to { opacity: 1; } }
+}
 
 /* ---------- navigazione ---------- */
 .top { align-items: end; }
@@ -324,7 +356,9 @@ button, input, select { font: inherit; color: inherit; }
   .filters .panel { display: none; padding-bottom: 8px; }
   .filters.open .panel { display: block; }
   .filters h2 { display: none; }
-  .dgrid { grid-template-columns: 1fr; gap: 16px; }
+  .dgrid { grid-template-columns: 1fr; grid-template-rows: none; grid-template-areas: "gallery" "info" "desc"; gap: 16px; }
+  .desc { margin-top: 16px; }
+  .dtext { padding: 14px 16px; }
   .stamp { text-align: left; }
   .grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
 }
@@ -781,7 +815,10 @@ button, input, select { font: inherit; color: inherit; }
           }).join("") + "</table>" : "<p>Nessuna rilevazione.</p>") +
           (hist.length === 1 ? "<p>Prezzo invariato da quando l'annuncio è in elenco.</p>" : "") +
         "</section>" +
-      "</div></div>";
+      "</div>" +
+      '<section class="desc" id="desc" aria-labelledby="desc-h"></section>' +
+      "</div>";
+    loadDescription(l);
     if (p.length > 1) {
       $("gprev").onclick = function () { showPhoto(gi - 1); };
       $("gnext").onclick = function () { showPhoto(gi + 1); };
@@ -790,6 +827,72 @@ button, input, select { font: inherit; color: inherit; }
       };
     }
   }
+
+  // ---------- descrizione del venditore (letta dal sito alla prima apertura, poi dal database) ----------
+  var DESC = {}, descLang = "it";
+  function descHead(right) {
+    return '<div class="dhead"><h2 id="desc-h">Descrizione del venditore</h2>' + (right || "") + "</div>";
+  }
+  function loadDescription(l) {
+    var box = $("desc");
+    if (!DATA.server) {
+      box.innerHTML = descHead() + '<p class="dnote">La descrizione e la traduzione si vedono aprendo ImportHelper da http://localhost:8765.</p>';
+      return;
+    }
+    if (DESC[l.id]) return renderDescription(l, DESC[l.id]);
+    box.innerHTML = descHead() + '<p class="dwait" role="status">Leggo la descrizione dall\'annuncio su ' + esc(sname(l.source)) +
+      '<span class="bar"></span><span class="bar"></span><span class="bar"></span></p>';
+    fetch("/api/descrizione?id=" + encodeURIComponent(l.id))
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.error || d.text) DESC[l.id] = d.error ? null : d;   // un errore si riprova alla prossima apertura
+        if (current === l) renderDescription(l, d);
+      })
+      .catch(function () { if (current === l) renderDescription(l, { error: "fetch" }); });
+  }
+  function renderDescription(l, d) {
+    var box = $("desc");
+    if (d.error === "fetch" || (d.error && !d.text)) {
+      box.innerHTML = descHead() + '<p class="derr">Non sono riuscito a leggere la descrizione da ' + esc(sname(l.source)) +
+        '. Il sito potrebbe non rispondere in questo momento.<button type="button" id="desc-retry">Riprova</button></p>';
+      $("desc-retry").onclick = function () { delete DESC[l.id]; loadDescription(l); };
+      return;
+    }
+    if (!d.text) {
+      box.innerHTML = descHead() + '<p class="dnote">Il venditore non ha scritto una descrizione. ' +
+        'Trovi tutti i dettagli <a href="' + esc(l.url) + '" target="_blank" rel="noopener">sull\'annuncio originale</a>.</p>';
+      return;
+    }
+    var both = d.needs_translation && d.translation;
+    var showIt = both && descLang === "it";
+    var lname = d.lang_name || "lingua originale";
+    var toggle = both ? '<div class="seg" role="group" aria-label="Lingua della descrizione" id="desc-lang">' +
+      '<button type="button" data-v="it" aria-pressed="' + showIt + '">In italiano</button>' +
+      '<button type="button" data-v="orig" aria-pressed="' + !showIt + '">Originale in ' + esc(lname) + "</button></div>" : "";
+    var note = both
+      ? (showIt ? "Tradotta automaticamente " + (/^[aeiou]/i.test(lname) ? "dall'" : "dal ") + esc(lname) + " con Google Traduttore: per i dettagli importanti fa fede il testo originale."
+                : "Testo scritto dal venditore, in " + esc(lname) + ".")
+      : (d.error === "translate" ? "Traduzione non disponibile in questo momento: si riprova alla prossima apertura della scheda." : "");
+    box.innerHTML = descHead(toggle) +
+      '<p class="dtext" id="desc-text" lang="' + (showIt ? "it" : esc(d.lang || "")) + '">' + esc(showIt ? d.translation : d.text) + "</p>" +
+      '<button type="button" class="dmore" id="desc-more" hidden>Mostra tutta la descrizione</button>' +
+      (note ? '<p class="dnote">' + note + "</p>" : "");
+    var t = $("desc-text"), more = $("desc-more");
+    t.classList.add("clip");
+    if (t.scrollHeight > t.clientHeight + 8) {
+      more.hidden = false;
+      more.onclick = function () {
+        var open = t.classList.toggle("clip");
+        more.textContent = open ? "Mostra tutta la descrizione" : "Mostra meno";
+      };
+    } else t.classList.remove("clip");
+    if (both) $("desc-lang").onclick = function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      descLang = b.dataset.v; store.set("ih-desc-lang", descLang);
+      renderDescription(l, d);
+    };
+  }
+  descLang = store.get("ih-desc-lang") || "it";
 
   document.addEventListener("keydown", function (e) {
     if ($("detail-view").hidden || !current || !current.photos || current.photos.length < 2) return;

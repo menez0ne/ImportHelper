@@ -1,7 +1,8 @@
 """Server locale: http://localhost:8765  (python -m importhelper.server)
 
 - "/"            la pagina con i dati aggiornati e il modulo "Cerca un'auto"
-- "/api/..."     ricerche, avanzamento della raccolta, marche e modelli
+- "/api/..."     ricerche, avanzamento della raccolta, marche e modelli,
+                 descrizione tradotta di un annuncio
 
 Risponde solo da questo PC (127.0.0.1). Una raccolta alla volta, in un thread a
 parte; le altre richieste aspettano in coda. Le richieste che cambiano qualcosa
@@ -26,6 +27,7 @@ from typing import Callable
 from urllib.parse import parse_qs, urlparse
 
 from . import __main__ as app
+from . import description
 from .db import Database
 from .searches import SearchStore, is_saved, make_search
 from .site import build as build_site
@@ -261,12 +263,25 @@ def make_handler(collector: Collector, taxonomy: Taxonomy | None = None):
                     return self._json(search_summary(db, cfg, collector))
                 finally:
                     db.conn.close()
+            if url.path == "/api/descrizione":
+                return self._description((parse_qs(url.query).get("id") or [""])[0])
             if url.path == "/api/makes":
                 return self._json(tax.makes())
             if url.path == "/api/models":
                 make = (parse_qs(url.query).get("make") or [""])[0]
                 return self._json(tax.models(make))
             return self._error("Pagina non trovata", 404)
+
+        def _description(self, listing_id: str) -> None:
+            """Descrizione del venditore (letta dal sito la prima volta) e traduzione in italiano."""
+            cfg, db = self._db()
+            try:
+                rows = db.get([listing_id])
+                if not rows:
+                    return self._error("Annuncio non trovato", 404)
+                return self._json(description.get(db.conn, dict(rows[0])))
+            finally:
+                db.conn.close()
 
         # ---- POST ----
         def do_POST(self):
