@@ -10,6 +10,7 @@ prezzo. Gira in locale su Windows: nessun account, nessun dato inviato a terzi.
   Otomoto, Willhaben, Blocket, Finn.no.
 - **Prezzi in euro** con i cambi ufficiali della BCE.
 - **Scheda per ogni annuncio**: foto, chilometri, anno, Paese, storico del prezzo, link all'originale.
+- **Descrizione del venditore** nella scheda, con la traduzione in italiano se è in un'altra lingua (Google Traduttore). Si legge dal sito alla prima apertura della scheda e resta salvata nel database.
 - **Doppioni uniti**: la stessa auto pubblicata su più siti compare una volta sola.
 - **Notifiche** di nuovi annunci, ribassi, rialzi e annunci rimossi.
 - **Aggiornamento automatico** delle ricerche salvate ogni 3 ore, in background.
