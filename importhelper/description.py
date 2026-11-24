@@ -63,7 +63,8 @@ CREATE TABLE IF NOT EXISTS descriptions (
     text TEXT,                      -- testo originale ("" = l'annuncio non ha descrizione)
     lang TEXT,                      -- lingua riconosciuta, es. "de"
     translation TEXT,               -- traduzione in italiano (NULL se non serve o non riuscita)
-    fetched_at TEXT
+    fetched_at TEXT,
+    translator TEXT                 -- chi ha tradotto: "DeepL" o "Google Traduttore"
 );
 """
 
@@ -209,18 +210,18 @@ def translate_google(text: str, session: Optional[requests.Session] = None) -> t
     return lang or "", "\n".join(out).strip()
 
 
-def translate(text: str, session: Optional[requests.Session] = None) -> tuple[str, Optional[str]]:
-    """Ritorna (lingua riconosciuta, traduzione). Traduzione None se il testo è già in italiano.
+def translate(text: str, session: Optional[requests.Session] = None) -> tuple[str, Optional[str], str]:
+    """Ritorna (lingua riconosciuta, traduzione, traduttore). Traduzione None se il testo è già in italiano.
 
     Prima DeepL (se c'è la chiave), poi Google. Se nessuno risponde rilancia l'ultimo errore.
     """
     key = deepl_key()
     if key:
         try:
-            return translate_deepl(text, key, session)
+            return (*translate_deepl(text, key, session), "DeepL")
         except (TranslatorBusy, requests.RequestException, ValueError, KeyError, IndexError) as e:
             print(f"  DeepL non disponibile ({e}), provo Google", flush=True)
-    return translate_google(text, session)
+    return (*translate_google(text, session), "Google Traduttore")
 
 
 # ---------- cache ----------
@@ -243,6 +244,7 @@ def _result(row: dict, error: str = "") -> dict:
         "lang_name": LANGUAGES.get(lang, lang),
         "translation": row.get("translation"),
         "translated": bool(row.get("translation")),
+        "translator": row.get("translator") or "Google Traduttore",   # le traduzioni salvate prima erano tutte di Google
         "needs_translation": bool(row.get("text")) and lang != "it",
         "error": error,
     }
@@ -251,6 +253,12 @@ def _result(row: dict, error: str = "") -> dict:
 def get(conn, listing: dict, http: Optional[Http] = None, session: Optional[requests.Session] = None) -> dict:
     """Descrizione (e traduzione) di un annuncio: dal database, altrimenti dal sito."""
     conn.executescript(SCHEMA)
+    if "translator" not in {r[1] for r in conn.execute("PRAGMA table_info(descriptions)")}:
+        # database creato prima di questa colonna: le traduzioni già salvate vengono da DeepL se c'è la chiave
+        conn.execute("ALTER TABLE descriptions ADD COLUMN translator TEXT")
+        conn.execute("UPDATE descriptions SET translator = ? WHERE translation IS NOT NULL",
+                     ("DeepL" if deepl_key() else "Google Traduttore",))
+        conn.commit()
     key = f"{listing['source']}:{listing['source_id']}"
     with _lock(key):
         row = _row(conn, key)
@@ -267,14 +275,14 @@ def get(conn, listing: dict, http: Optional[Http] = None, session: Optional[requ
             conn.commit()
         if row["text"] and (row.get("lang") is None or (row["lang"] != "it" and not row.get("translation"))):
             try:
-                row["lang"], row["translation"] = translate(row["text"], session)
+                row["lang"], row["translation"], row["translator"] = translate(row["text"], session)
             except TranslatorBusy as e:
                 print(f"  traduzione rimandata per {key}: {e}", flush=True)
                 return _result(row, "translate_busy")
             except (requests.RequestException, ValueError, KeyError, IndexError, TypeError) as e:
                 print(f"  traduzione non riuscita per {key}: {e}", flush=True)
                 return _result(row, "translate")
-            conn.execute("UPDATE descriptions SET lang = ?, translation = ? WHERE key = ?",
-                         (row["lang"], row["translation"], key))
+            conn.execute("UPDATE descriptions SET lang = ?, translation = ?, translator = ? WHERE key = ?",
+                         (row["lang"], row["translation"], row["translator"], key))
             conn.commit()
         return _result(row)
