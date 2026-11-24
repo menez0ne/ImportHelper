@@ -5,9 +5,12 @@ dell'annuncio la prima volta che se ne apre la scheda, e la salviamo nel
 database (tabella "descriptions") insieme alla traduzione. Le volte dopo la
 scheda la mostra subito, senza richieste ai siti.
 
-Traduzione: Google Traduttore (servizio gratuito, senza chiave), che riconosce
-anche la lingua del testo. Se non risponde, si mostra il testo originale e la
-traduzione si riprova alla prossima apertura.
+Traduzione: DeepL se in data/deepl.txt c'è una chiave "DeepL API Free"
+(gratis fino a 500.000 caratteri al mese), altrimenti Google Traduttore
+(gratuito, senza chiave). Tutti e due riconoscono da soli la lingua del testo.
+Se il traduttore non risponde si mostra il testo originale e la traduzione si
+riprova alla prossima apertura. Se Google risponde "troppe richieste" (429)
+non gli chiediamo niente per 30 minuti, per non allungare il blocco.
 """
 from __future__ import annotations
 
@@ -15,6 +18,8 @@ import html as htmllib
 import json
 import re
 import threading
+import time
+from pathlib import Path
 from typing import Optional
 
 import requests
@@ -23,6 +28,8 @@ from .db import now
 from .http import HEADERS, Http
 
 TRANSLATE_URL = "https://translate.googleapis.com/translate_a/single"
+DEEPL_KEY_FILE = Path(__file__).resolve().parent.parent / "data" / "deepl.txt"
+GOOGLE_PAUSE = 30 * 60    # secondi senza chiedere a Google dopo un "troppe richieste"
 MAX_CHARS = 8000          # le descrizioni più lunghe vengono tagliate
 CHUNK = 1800              # caratteri per richiesta di traduzione
 
@@ -38,6 +45,13 @@ LANGUAGES = {
 # titoli della sezione "Descrizione" nelle lingue dei siti
 HEADINGS = ("Beskrivelse|Beskrivning|Beschreibung|Fahrzeugbeschreibung|Beschrijving|Omschrijving|Description|"
             "Descrizione|Descripción|Opis|Kuvaus|Popis")
+
+_google_paused_until = 0.0
+
+
+class TranslatorBusy(Exception):
+    """Il traduttore ha risposto "troppe richieste": si riprova più tardi."""
+
 
 _LOCKS: dict[str, threading.Lock] = {}
 _LOCKS_GUARD = threading.Lock()
@@ -149,14 +163,42 @@ def _chunks(text: str) -> list[str]:
     return [p for p in parts if p.strip()]
 
 
-def translate(text: str, session: Optional[requests.Session] = None) -> tuple[str, Optional[str]]:
-    """Ritorna (lingua riconosciuta, traduzione). Traduzione None se il testo è già in italiano."""
+def deepl_key() -> str:
+    """La chiave DeepL, se l'utente l'ha messa in data/deepl.txt (o nella variabile DEEPL_API_KEY)."""
+    import os
+    key = os.environ.get("DEEPL_API_KEY", "")
+    if not key and DEEPL_KEY_FILE.exists():
+        key = DEEPL_KEY_FILE.read_text(encoding="utf-8-sig").strip()
+    return key
+
+
+def translate_deepl(text: str, key: str, session: Optional[requests.Session] = None) -> tuple[str, Optional[str]]:
+    s = session or requests.Session()
+    host = "api-free.deepl.com" if key.endswith(":fx") else "api.deepl.com"   # le chiavi gratuite finiscono con :fx
+    r = s.post(f"https://{host}/v2/translate", json={"text": [text], "target_lang": "IT"},
+               headers={"Authorization": f"DeepL-Auth-Key {key}"}, timeout=30)
+    if r.status_code in (429, 456):          # troppe richieste / caratteri del mese finiti
+        raise TranslatorBusy(f"DeepL: risposta {r.status_code}")
+    if r.status_code != 200:
+        raise requests.HTTPError(f"risposta {r.status_code} da DeepL")
+    t = r.json()["translations"][0]
+    lang = (t.get("detected_source_language") or "").lower()
+    return (lang, None) if lang == "it" else (lang, t["text"].strip())
+
+
+def translate_google(text: str, session: Optional[requests.Session] = None) -> tuple[str, Optional[str]]:
+    global _google_paused_until
+    if time.time() < _google_paused_until:
+        raise TranslatorBusy("Google Traduttore in pausa dopo un 'troppe richieste'")
     s = session or requests.Session()
     lang, out = "", []
     for chunk in _chunks(text):
         r = s.post(TRANSLATE_URL, params={"client": "gtx", "sl": "auto", "tl": "it", "dt": "t"},
                    data={"q": chunk}, headers={"User-Agent": HEADERS["User-Agent"]}, timeout=20,
                    allow_redirects=False)       # troppe richieste: Google rimanda a una pagina di verifica
+        if r.status_code in (302, 429):
+            _google_paused_until = time.time() + GOOGLE_PAUSE
+            raise TranslatorBusy(f"Google Traduttore: risposta {r.status_code} (troppe richieste), pausa di 30 minuti")
         if r.status_code != 200:
             raise requests.HTTPError(f"risposta {r.status_code} dal traduttore")
         data = r.json()
@@ -165,6 +207,20 @@ def translate(text: str, session: Optional[requests.Session] = None) -> tuple[st
             return "it", None
         out.append("".join(seg[0] for seg in (data[0] or []) if seg and seg[0]))
     return lang or "", "\n".join(out).strip()
+
+
+def translate(text: str, session: Optional[requests.Session] = None) -> tuple[str, Optional[str]]:
+    """Ritorna (lingua riconosciuta, traduzione). Traduzione None se il testo è già in italiano.
+
+    Prima DeepL (se c'è la chiave), poi Google. Se nessuno risponde rilancia l'ultimo errore.
+    """
+    key = deepl_key()
+    if key:
+        try:
+            return translate_deepl(text, key, session)
+        except (TranslatorBusy, requests.RequestException, ValueError, KeyError, IndexError) as e:
+            print(f"  DeepL non disponibile ({e}), provo Google", flush=True)
+    return translate_google(text, session)
 
 
 # ---------- cache ----------
@@ -212,7 +268,10 @@ def get(conn, listing: dict, http: Optional[Http] = None, session: Optional[requ
         if row["text"] and (row.get("lang") is None or (row["lang"] != "it" and not row.get("translation"))):
             try:
                 row["lang"], row["translation"] = translate(row["text"], session)
-            except (requests.RequestException, ValueError, IndexError, TypeError) as e:
+            except TranslatorBusy as e:
+                print(f"  traduzione rimandata per {key}: {e}", flush=True)
+                return _result(row, "translate_busy")
+            except (requests.RequestException, ValueError, KeyError, IndexError, TypeError) as e:
                 print(f"  traduzione non riuscita per {key}: {e}", flush=True)
                 return _result(row, "translate")
             conn.execute("UPDATE descriptions SET lang = ?, translation = ? WHERE key = ?",
