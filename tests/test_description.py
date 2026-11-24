@@ -120,6 +120,7 @@ class CacheTests(unittest.TestCase):
         d = description.get(self.conn, self.LISTING, http, tr)
         self.assertEqual((d["lang"], d["lang_name"], d["error"]), ("de", "tedesco", ""))
         self.assertEqual(d["translation"], "[it] Scheckheftgepflegt und unfallfrei, Garantie.")
+        self.assertEqual(d["translator"], "Google Traduttore")
         self.assertTrue(d["needs_translation"])
         # seconda apertura: niente richieste né al sito né al traduttore
         again = description.get(self.conn, self.LISTING, http, tr)
@@ -157,6 +158,7 @@ class CacheTests(unittest.TestCase):
             tr = FakeTranslator("de")
             d = description.get(self.conn, self.LISTING, FakeHttp(self.page), tr)
             self.assertTrue(d["translation"].startswith("[deepl]"))
+            self.assertEqual(d["translator"], "DeepL")
             self.assertEqual(d["lang"], "de")
             self.assertEqual(tr.urls, ["https://api-free.deepl.com/v2/translate"])
         with mock.patch.dict("os.environ", {"DEEPL_API_KEY": "chiave-prova:fx"}):
@@ -167,8 +169,7 @@ class CacheTests(unittest.TestCase):
                         r.status_code = 456
                     return r
             tr = Mixed("de")                 # DeepL senza caratteri (456): si passa a Google
-            lang, text = description.translate("Hallo Welt", tr)
-            self.assertEqual((lang, text), ("de", "[it] Hallo Welt"))
+            self.assertEqual(description.translate("Hallo Welt", tr), ("de", "[it] Hallo Welt", "Google Traduttore"))
             self.assertEqual(len(tr.urls), 2)
 
     def test_site_unreachable_not_cached(self):
@@ -176,6 +177,22 @@ class CacheTests(unittest.TestCase):
         self.assertEqual(d["error"], "fetch")
         d = description.get(self.conn, self.LISTING, FakeHttp(self.page), FakeTranslator())
         self.assertEqual(d["error"], "")
+
+    def test_old_table_gets_translator_column(self):
+        # database di ieri: tabella senza la colonna "translator"
+        self.conn.execute("CREATE TABLE descriptions (key TEXT PRIMARY KEY, url TEXT, text TEXT, lang TEXT, "
+                          "translation TEXT, fetched_at TEXT)")
+        self.conn.execute("INSERT INTO descriptions VALUES ('autoscout24:abc', 'u', 'Hallo Welt, alles gut', 'de', 'Ciao', 'x')")
+        d = description.get(self.conn, self.LISTING, FakeHttp(None), FakeTranslator())
+        self.assertEqual((d["translation"], d["translator"]), ("Ciao", "Google Traduttore"))
+        # con la chiave DeepL già presente, le traduzioni di prima sono di DeepL
+        self.conn.execute("DROP TABLE descriptions")
+        self.conn.execute("CREATE TABLE descriptions (key TEXT PRIMARY KEY, url TEXT, text TEXT, lang TEXT, "
+                          "translation TEXT, fetched_at TEXT)")
+        self.conn.execute("INSERT INTO descriptions VALUES ('autoscout24:abc', 'u', 'Hallo Welt, alles gut', 'de', 'Ciao', 'x')")
+        with mock.patch.dict("os.environ", {"DEEPL_API_KEY": "k:fx"}):
+            d = description.get(self.conn, self.LISTING, FakeHttp(None), FakeTranslator())
+        self.assertEqual(d["translator"], "DeepL")
 
     def test_no_description(self):
         d = description.get(self.conn, self.LISTING, FakeHttp("<html></html>"), FakeTranslator())

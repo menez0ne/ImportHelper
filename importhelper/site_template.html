@@ -870,7 +870,7 @@ button, input, select { font: inherit; color: inherit; }
       '<button type="button" data-v="it" aria-pressed="' + showIt + '">In italiano</button>' +
       '<button type="button" data-v="orig" aria-pressed="' + !showIt + '">Originale in ' + esc(lname) + "</button></div>" : "";
     var note = both
-      ? (showIt ? "Tradotta automaticamente " + (/^[aeiou]/i.test(lname) ? "dall'" : "dal ") + esc(lname) + " con Google Traduttore: per i dettagli importanti fa fede il testo originale."
+      ? (showIt ? "Tradotta automaticamente " + (/^[aeiou]/i.test(lname) ? "dall'" : "dal ") + esc(lname) + " con " + esc(d.translator || "Google Traduttore") + ": per i dettagli importanti fa fede il testo originale."
                 : "Testo scritto dal venditore, in " + esc(lname) + ".")
       : (d.error === "translate_busy" ? "Il traduttore ha ricevuto troppe richieste da questo PC e per ora non risponde. Intanto trovi il testo originale: la traduzione si riprova da sola alle prossime aperture della scheda."
         : d.error === "translate" ? "Traduzione non disponibile in questo momento: si riprova alla prossima apertura della scheda." : "");
