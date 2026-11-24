@@ -2,6 +2,8 @@
 import json
 import sqlite3
 import unittest
+from pathlib import Path
+from unittest import mock
 
 from importhelper import description
 
@@ -31,15 +33,22 @@ class FakeHttp:
 class FakeTranslator:
     """Finto Google Traduttore: riconosce il tedesco e "traduce" mettendo [it] davanti."""
 
-    def __init__(self, lang="de", fail=False):
-        self.lang, self.fail, self.calls = lang, fail, 0
+    def __init__(self, lang="de", fail=False, status=200):
+        self.lang, self.fail, self.status, self.calls, self.urls = lang, fail, status, 0, []
 
-    def post(self, url, params=None, data=None, **kw):
+    def post(self, url, params=None, data=None, json=None, **kw):
         self.calls += 1
+        self.urls.append(url)
         if self.fail:
             raise description.requests.ConnectionError("offline")
-        q = data["q"]
-        return FakeResponse(data=[[["[it] " + q, q]], None, self.lang])
+        if "deepl" in url:                         # finto DeepL
+            q = json["text"][0]
+            r = FakeResponse(data={"translations": [{"detected_source_language": self.lang.upper(), "text": "[deepl] " + q}]})
+        else:
+            q = data["q"]
+            r = FakeResponse(data=[[["[it] " + q, q]], None, self.lang])
+        r.status_code = self.status
+        return r
 
 
 def next_data(obj):
@@ -98,6 +107,10 @@ class CacheTests(unittest.TestCase):
     LISTING = {"source": "autoscout24", "source_id": "abc", "url": "https://example.invalid/a"}
 
     def setUp(self):
+        description._google_paused_until = 0.0
+        p = mock.patch.object(description, "DEEPL_KEY_FILE", Path("/non/esiste/deepl.txt"))
+        p.start()
+        self.addCleanup(p.stop)
         self.conn = sqlite3.connect(":memory:")
         self.conn.row_factory = sqlite3.Row
         self.page = next_data({"listingDetails": {"description": "Scheckheftgepflegt und unfallfrei, Garantie."}})
@@ -126,6 +139,37 @@ class CacheTests(unittest.TestCase):
         self.assertEqual(d["error"], "")
         self.assertTrue(d["translation"].startswith("[it]"))
         self.assertEqual(http.calls, 1)               # il testo era già salvato
+
+    def test_google_429_pauses(self):
+        http = FakeHttp(self.page)
+        d = description.get(self.conn, self.LISTING, http, FakeTranslator(status=429))
+        self.assertEqual(d["error"], "translate_busy")
+        self.assertIn("Scheckheftgepflegt", d["text"])
+        # nei 30 minuti dopo non si chiede niente a Google
+        tr = FakeTranslator("de")
+        self.assertEqual(description.get(self.conn, self.LISTING, http, tr)["error"], "translate_busy")
+        self.assertEqual(tr.calls, 0)
+        description._google_paused_until = 0.0         # passata la pausa: si traduce
+        self.assertTrue(description.get(self.conn, self.LISTING, http, tr)["translated"])
+
+    def test_deepl_first_then_google(self):
+        with mock.patch.dict("os.environ", {"DEEPL_API_KEY": "chiave-prova:fx"}):
+            tr = FakeTranslator("de")
+            d = description.get(self.conn, self.LISTING, FakeHttp(self.page), tr)
+            self.assertTrue(d["translation"].startswith("[deepl]"))
+            self.assertEqual(d["lang"], "de")
+            self.assertEqual(tr.urls, ["https://api-free.deepl.com/v2/translate"])
+        with mock.patch.dict("os.environ", {"DEEPL_API_KEY": "chiave-prova:fx"}):
+            class Mixed(FakeTranslator):
+                def post(self, url, **kw):
+                    r = super().post(url, **kw)
+                    if "deepl" in url:
+                        r.status_code = 456
+                    return r
+            tr = Mixed("de")                 # DeepL senza caratteri (456): si passa a Google
+            lang, text = description.translate("Hallo Welt", tr)
+            self.assertEqual((lang, text), ("de", "[it] Hallo Welt"))
+            self.assertEqual(len(tr.urls), 2)
 
     def test_site_unreachable_not_cached(self):
         d = description.get(self.conn, self.LISTING, FakeHttp(None), FakeTranslator())

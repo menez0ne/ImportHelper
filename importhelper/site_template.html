@@ -872,7 +872,8 @@ button, input, select { font: inherit; color: inherit; }
     var note = both
       ? (showIt ? "Tradotta automaticamente " + (/^[aeiou]/i.test(lname) ? "dall'" : "dal ") + esc(lname) + " con Google Traduttore: per i dettagli importanti fa fede il testo originale."
                 : "Testo scritto dal venditore, in " + esc(lname) + ".")
-      : (d.error === "translate" ? "Traduzione non disponibile in questo momento: si riprova alla prossima apertura della scheda." : "");
+      : (d.error === "translate_busy" ? "Il traduttore ha ricevuto troppe richieste da questo PC e per ora non risponde. Intanto trovi il testo originale: la traduzione si riprova da sola alle prossime aperture della scheda."
+        : d.error === "translate" ? "Traduzione non disponibile in questo momento: si riprova alla prossima apertura della scheda." : "");
     box.innerHTML = descHead(toggle) +
       '<p class="dtext" id="desc-text" lang="' + (showIt ? "it" : esc(d.lang || "")) + '">' + esc(showIt ? d.translation : d.text) + "</p>" +
       '<button type="button" class="dmore" id="desc-more" hidden>Mostra tutta la descrizione</button>' +

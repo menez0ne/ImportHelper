@@ -11,6 +11,7 @@ prezzo. Gira in locale su Windows: nessun account, nessun dato inviato a terzi.
 - **Prezzi in euro** con i cambi ufficiali della BCE.
 - **Scheda per ogni annuncio**: foto, chilometri, anno, Paese, storico del prezzo, link all'originale.
 - **Descrizione del venditore** nella scheda, con la traduzione in italiano se è in un'altra lingua (Google Traduttore). Si legge dal sito alla prima apertura della scheda e resta salvata nel database.
+  Per una traduzione più affidabile puoi usare DeepL: crea una chiave gratuita "DeepL API Free" su deepl.com/pro-api e incollala da sola nel file `data\deepl.txt`. Senza chiave si usa Google Traduttore, che a volte blocca per qualche ora chi fa troppe richieste.
 - **Doppioni uniti**: la stessa auto pubblicata su più siti compare una volta sola.
 - **Notifiche** di nuovi annunci, ribassi, rialzi e annunci rimossi.
 - **Aggiornamento automatico** delle ricerche salvate ogni 3 ore, in background.
